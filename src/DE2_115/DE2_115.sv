@@ -196,7 +196,7 @@ Top top0( // refer to Lab3 for more details
 	.i_AUD_ADCLRCK(AUD_ADCLRCK),
 	.i_AUD_BCLK(AUD_BCLK),
 	.i_AUD_DACLRCK(AUD_DACLRCK),
-	.o_AUD_DACDAT(AUD_DACDAT),
+	.o_AUD_DACDAT(AUD_DACDAT)
 
 	// SEVENDECODER (optional display)
 	// .o_record_time(recd_time),
@@ -212,7 +212,7 @@ Top top0( // refer to Lab3 for more details
 	// .o_LCD_BLON(LCD_BLON),
 
 	// LED
-	.o_ledg(LEDG) // [8:0]
+	// .o_ledg(LEDG) // [8:0]
 	// .o_ledr(LEDR) // [17:0]
 );
 
