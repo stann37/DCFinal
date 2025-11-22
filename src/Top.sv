@@ -41,4 +41,70 @@ module Top(
 
 );
 
+parameter S_I2C = 0; // defalut state upon resetting, I2C then go to S_PLAY
+parameter S_PLAY = 1;
+parameter S_SET = 2;
+parameter S_RECD_LOOP = 3;
+parameter S_PLAY_LOOP = 4;
+
+logic [2:0] state_w, state_r;
+
+// I2C
+logic I2C_finish;
+logic i2c_oen, i2c_sdat;
+assign io_I2C_SDAT = (i2c_oen) ? i2c_sdat : 1'bz;
+
+I2cInitializer init0(
+	.i_rst_n(i_rst_n),
+	.i_clk(i_clk_100k),
+	.i_start(1'b1),	// inside I2C module, start I2C when !i_rst_n 
+	.o_finished(I2C_finish),
+	.o_sclk(o_I2C_SCLK),
+	.o_sdat(i2c_sdat),
+	.o_oen(i2c_oen) // you are outputing (you are not outputing only when you are "ack"ing.)
+);
+
+
+always_comb begin
+	state_w = state_r;
+
+	case (state_r)
+		S_I2C: begin
+			if (I2C_finish) begin
+				state_w = S_PLAY;
+			end
+		end
+		S_PLAY: begin
+			if (i_key_2) begin
+				state_w = S_SET;
+			end
+			else if (i_key_1) begin
+				state_w = S_RECD_LOOP;
+			end
+		end
+		S_SET: begin
+			if (i_key_2) begin
+				state_w = S_PLAY;
+			end
+		end
+		S_RECD_LOOP: begin
+			if (i_key_1) begin
+				state_w = S_PLAY_LOOP;
+			end
+		end
+		S_PLAY_LOOP: begin
+
+		end
+	endcase
+end
+
+always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
+	if (!i_rst_n) begin
+		state_r <= S_I2C; // start from I2C initialization
+	end
+	else begin
+		state_r <= state_w;
+	end
+end
+
 endmodule
