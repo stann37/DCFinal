@@ -48,6 +48,14 @@ parameter S_RECD_LOOP = 3;
 parameter S_PLAY_LOOP = 4;
 
 logic [2:0] state_w, state_r;
+logic [2:0] state_gate_r, state_gate_w;
+logic [2:0] state_comp_r, state_comp_w;
+logic {2:0} state_dist_r, state_dist_w;
+logic {2:0} state_EQb_r, state_EQb_w;
+logic {2:0} state_EQt_r, state_EQt_w;
+logic {2:0} state_trem_r, state_trem_w;
+logic [2:0] state_chor_r, state_chor_w;
+logic [2:0] state_delay_r, state_delay_w;
 
 // I2C
 logic I2C_finish;
@@ -65,9 +73,9 @@ I2cInitializer init0(
 );
 
 
+// state transition
 always_comb begin
 	state_w = state_r;
-
 	case (state_r)
 		S_I2C: begin
 			if (I2C_finish) begin
@@ -98,6 +106,7 @@ always_comb begin
 	endcase
 end
 
+// reset logic
 always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_I2C; // start from I2C initialization
