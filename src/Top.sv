@@ -50,10 +50,10 @@ parameter S_PLAY_LOOP = 4;
 logic [2:0] state_w, state_r;
 logic [2:0] state_gate_r, state_gate_w;
 logic [2:0] state_comp_r, state_comp_w;
-logic {2:0} state_dist_r, state_dist_w;
-logic {2:0} state_EQb_r, state_EQb_w;
-logic {2:0} state_EQt_r, state_EQt_w;
-logic {2:0} state_trem_r, state_trem_w;
+logic [2:0] state_dist_r, state_dist_w;
+logic [2:0] state_EQb_r, state_EQb_w;
+logic [2:0] state_EQt_r, state_EQt_w;
+logic [2:0] state_trem_r, state_trem_w;
 logic [2:0] state_chor_r, state_chor_w;
 logic [2:0] state_delay_r, state_delay_w;
 
@@ -73,7 +73,7 @@ I2cInitializer init0(
 );
 
 
-// state transition
+// top FSM state transition
 always_comb begin
 	state_w = state_r;
 	case (state_r)
@@ -106,13 +106,51 @@ always_comb begin
 	endcase
 end
 
+// user signal transitions
+always_comb begin
+	// default: hold state
+	state_gate_w = state_gate_r;
+	state_comp_w = state_comp_r;
+	state_dist_w = state_dist_r;
+	state_EQb_w = state_EQb_r;
+	state_EQt_w = state_EQt_r;
+	state_trem_w = state_trem_r;
+	state_chor_w = state_chor_r;
+	state_delay_w = state_delay_r;
+
+	// modify states based on key inputs in S_SET state
+	if (state_r == S_SET) begin
+		
+	end
+end
+
 // reset logic
 always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_I2C; // start from I2C initialization
+
+		// mmodify default states of effects here
+		state_gate_r <= 0;
+		state_comp_r <= 0;
+		state_dist_r <= 0;
+		state_EQb_r <= 0;
+		state_EQt_r <= 0;
+		state_trem_r <= 0;
+		state_chor_r <= 0;
+		state_delay_r <= 0;
+
 	end
 	else begin
 		state_r <= state_w;
+
+		state_gate_r <= state_gate_w;
+		state_comp_r <= state_comp_w;
+		state_dist_r <= state_dist_w;
+		state_EQb_r <= state_EQb_w;
+		state_EQt_r <= state_EQt_w;
+		state_trem_r <= state_trem_w;
+		state_chor_r <= state_chor_w;
+		state_delay_r <= state_delay_w;
 	end
 end
 
