@@ -176,6 +176,7 @@ Top top0( // refer to Lab3 for more details
 	.i_key_0(key0down),
 	.i_key_1(key1down),
 	.i_key_2(key2down),
+	.i_sw(SW[17:0]),
 	
 	// AudDSP and SRAM
 	.o_SRAM_ADDR(SRAM_ADDR), // [19:0]

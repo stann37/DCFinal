@@ -4,6 +4,7 @@ module Top(
 	input i_key_0,
 	input i_key_1,
 	input i_key_2,
+	input [17:0] i_sw,
 
     // AudDSP and SRAM
 	output [19:0] o_SRAM_ADDR,
@@ -41,11 +42,21 @@ module Top(
 
 );
 
-parameter S_I2C = 0; // defalut state upon resetting, I2C then go to S_PLAY
-parameter S_PLAY = 1;
-parameter S_SET = 2;
-parameter S_RECD_LOOP = 3;
-parameter S_PLAY_LOOP = 4;
+localparam S_I2C = 0; // defalut state upon resetting, I2C then go to S_PLAY
+localparam S_PLAY = 1;
+localparam S_SET = 2;
+localparam S_RECD_LOOP = 3;
+localparam S_PLAY_LOOP = 4;
+
+// effect mapping for switches
+localparam EFF_GATE   = 3'd0;
+localparam EFF_COMP   = 3'd1;
+localparam EFF_DIST   = 3'd2;
+localparam EFF_EQ_B   = 3'd3;
+localparam EFF_EQ_T   = 3'd4;
+localparam EFF_TREM   = 3'd5;
+localparam EFF_CHOR   = 3'd6;
+localparam EFF_DEL    = 3'd7;
 
 logic [2:0] state_w, state_r;
 logic [2:0] state_gate_r, state_gate_w;
@@ -56,6 +67,8 @@ logic [2:0] state_EQt_r, state_EQt_w;
 logic [2:0] state_trem_r, state_trem_w;
 logic [2:0] state_chor_r, state_chor_w;
 logic [2:0] state_delay_r, state_delay_w;
+
+wire [2:0] effect_sel = i_sw[17:15];
 
 // I2C
 logic I2C_finish;
@@ -118,9 +131,19 @@ always_comb begin
 	state_chor_w = state_chor_r;
 	state_delay_w = state_delay_r;
 
-	// modify states based on key inputs in S_SET state
 	if (state_r == S_SET) begin
-		
+		if (i_key_0) begin // edit state update logic here
+			case (effect_sel)
+				EFF_GATE: state_gate_w  = state_gate_r + 1;
+				EFF_COMP: state_comp_w  = state_comp_r + 1;
+				EFF_DIST: state_dist_w  = state_dist_r + 1;
+				EFF_EQ_B: state_EQb_w   = state_EQb_r + 1;
+				EFF_EQ_T: state_EQt_w   = state_EQt_r + 1;
+				EFF_TREM: state_trem_w  = state_trem_r + 1;
+				EFF_CHOR: state_chor_w  = state_chor_r + 1;
+				EFF_DEL:  state_delay_w = state_delay_r + 1;
+			endcase
+		end
 	end
 end
 
