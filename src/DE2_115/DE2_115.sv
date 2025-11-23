@@ -136,14 +136,14 @@ module DE2_115 (
 	inout [6:0] EX_IO
 );
 
-logic key0down, key1down, key2down, key3down;
+logic key0down, key1down, key2down;
 logic CLK_12M, CLK_100K, CLK_800K;
 
 assign AUD_XCK = CLK_12M;
 
 aud_qsys pll0( // generate with qsys, please follow lab2 tutorials
 	.clk_clk(CLOCK_50),
-	.reset_reset_n(key3down),
+	.reset_reset_n(KEY[3]),
 	.altpll_12m_clk(CLK_12M),
 	.altpll_100k_clk(CLK_100K),
 	.altpll_800k_clk(CLK_800K)
@@ -197,7 +197,7 @@ Top top0( // refer to Lab3 for more details
 	.i_AUD_ADCLRCK(AUD_ADCLRCK),
 	.i_AUD_BCLK(AUD_BCLK),
 	.i_AUD_DACLRCK(AUD_DACLRCK),
-	.o_AUD_DACDAT(AUD_DACDAT)
+	.o_AUD_DACDAT(AUD_DACDAT),
 
 	// SEVENDECODER (optional display)
 	// .o_record_time(recd_time),
@@ -213,13 +213,15 @@ Top top0( // refer to Lab3 for more details
 	// .o_LCD_BLON(LCD_BLON),
 
 	// LED
-	// .o_ledg(LEDG) // [8:0]
-	// .o_ledr(LEDR) // [17:0]
+	.o_ledg(LEDG), // [8:0]
+	.o_ledr(LEDR), // [17:0]
+
+	.o_hex0(HEX0) // [6:0]
 );
 
 
 // comment those are use for display
-assign HEX0 = '1;
+// assign HEX0 = '1;
 assign HEX1 = '1;
 assign HEX2 = '1;
 assign HEX3 = '1;
