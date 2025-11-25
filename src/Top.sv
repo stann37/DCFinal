@@ -66,6 +66,17 @@ logic [2:0] state_delay_r, state_delay_w;
 wire [2:0] effect_sel = i_sw[17:15];
 wire [7:0] effect_en  = i_sw[7:0];
 
+logic daclrck_prev;
+wire  sample_valid;
+
+// Detect rising edge of DACLRCK to signify start of new Left Channel sample
+always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
+    if (!i_rst_n) daclrck_prev <= 1'b0;
+    else          daclrck_prev <= i_AUD_DACLRCK;
+end
+
+assign sample_valid = i_AUD_DACLRCK && ~daclrck_prev;
+
 // I2C
 logic I2C_finish;
 logic i2c_oen, i2c_sdat;
@@ -80,6 +91,46 @@ I2cInitializer init0(
 	.o_sdat(i2c_sdat),
 	.o_oen(i2c_oen)
 );
+
+// Audio Interface Modules
+logic signed [15:0] adc_data; // Raw audio from Line In
+logic signed [15:0] dac_data; // Final audio to Line Out
+
+AudRecorder recorder0(
+    .i_rst_n    (i_rst_n),
+    .i_clk      (i_AUD_BCLK),
+    .i_lrc      (i_AUD_ADCLRCK),
+    .i_start    (1'b1),        // Always recording
+    .i_pause    (1'b0),
+    .i_resume   (1'b0),
+    .i_stop     (1'b0),
+    .i_data     (i_AUD_ADCDAT),
+    .o_address  (),            // Not used for realtime
+    .o_data     (adc_data),    // <--- THIS IS YOUR INPUT AUDIO
+    .o_finish   (),
+    .o_debug    ()
+);
+
+// Output: Convert 16-bit Parallel to Serial I2S
+AudPlayer player0(
+    .i_rst_n      (i_rst_n),
+    .i_bclk       (i_AUD_BCLK),
+    .i_daclrck    (i_AUD_DACLRCK),
+    .i_en         (1'b1),        // Always playing
+    .i_dac_data   (dac_data),    // <--- THIS IS YOUR OUTPUT AUDIO
+    .o_aud_dacdat (o_AUD_DACDAT)
+);
+
+// Pass through audio for now ------------------
+assign dac_data = adc_data;
+assign o_SRAM_ADDR = 20'd0;
+assign io_SRAM_DQ  = 16'dz; // High Impedance
+assign o_SRAM_WE_N = 1'b1;  // Write Disable (Active Low)
+assign o_SRAM_CE_N = 1'b1;  // Chip Disable (Active Low)
+assign o_SRAM_OE_N = 1'b1;  // Output Disable (Active Low)
+assign o_SRAM_LB_N = 1'b1;  // Lower Byte Disable
+assign o_SRAM_UB_N = 1'b1;  // Upper Byte Disable
+// Pass through audio for now ------------------
 
 // FSM State Transition
 always_comb begin
@@ -155,20 +206,24 @@ always_comb begin
 	end
 end
 
-// HEX0: Show current value of selected effect
+// HEX0: Show current value of selected effect when in SET mode
 logic [2:0] current_val;
 always_comb begin
-	case (effect_sel)
-		EFF_GATE: current_val = state_gate_r;
-		EFF_COMP: current_val = state_comp_r;
-		EFF_DIST: current_val = state_dist_r;
-		EFF_EQ_B: current_val = state_EQb_r;
-		EFF_EQ_T: current_val = state_EQt_r;
-		EFF_TREM: current_val = state_trem_r;
-		EFF_CHOR: current_val = state_chor_r;
-		EFF_DEL:  current_val = state_delay_r;
-		default:  current_val = 3'd0;
-	endcase
+	if (state_r == S_SET) begin
+		case (effect_sel)
+			EFF_GATE: current_val = state_gate_r;
+			EFF_COMP: current_val = state_comp_r;
+			EFF_DIST: current_val = state_dist_r;
+			EFF_EQ_B: current_val = state_EQb_r;
+			EFF_EQ_T: current_val = state_EQt_r;
+			EFF_TREM: current_val = state_trem_r;
+			EFF_CHOR: current_val = state_chor_r;
+			EFF_DEL:  current_val = state_delay_r;
+			default:  current_val = 3'd0;
+		endcase
+	end else begin
+		current_val = 3'd0;
+	end
 end
 
 SevenHexDecoder hex_val_inst (
