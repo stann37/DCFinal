@@ -121,8 +121,7 @@ AudPlayer player0(
     .o_aud_dacdat (o_AUD_DACDAT)
 );
 
-// Pass through audio for now ------------------
-assign dac_data = adc_data;
+// No SRAM for now ------------------
 assign o_SRAM_ADDR = 20'd0;
 assign io_SRAM_DQ  = 16'dz; // High Impedance
 assign o_SRAM_WE_N = 1'b1;  // Write Disable (Active Low)
@@ -130,7 +129,20 @@ assign o_SRAM_CE_N = 1'b1;  // Chip Disable (Active Low)
 assign o_SRAM_OE_N = 1'b1;  // Output Disable (Active Low)
 assign o_SRAM_LB_N = 1'b1;  // Lower Byte Disable
 assign o_SRAM_UB_N = 1'b1;  // Upper Byte Disable
-// Pass through audio for now ------------------
+
+wire signed [15:0] w_gate_out;
+
+Effect_Gate gate0 (
+    .i_clk      (i_AUD_BCLK),
+    .i_rst_n    (i_rst_n),
+    .i_valid    (sample_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_enable   (effect_en[EFF_GATE]), // Controlled by Switch[0]
+    .i_level    (state_gate_r),      // Controlled by Key0/FSM
+    .i_data     (adc_data),          // Audio IN from Recorder
+    .o_data     (w_gate_out)         // Audio OUT to DAC (or next effect)
+);
+
+assign dac_data = w_gate_out;
 
 // FSM State Transition
 always_comb begin
