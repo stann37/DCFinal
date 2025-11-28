@@ -248,15 +248,25 @@ SevenHexDecoder hex_val_inst (
 always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_I2C; 
-		state_gate_r <= 0; state_comp_r <= 0; state_dist_r <= 0;
-		state_EQb_r  <= 0; state_EQt_r  <= 0; state_trem_r <= 0;
-		state_chor_r <= 0; state_delay_r <= 0;
+		state_gate_r <= 0;
+		state_comp_r <= 0;
+		state_dist_r <= 0;
+		state_EQb_r  <= 0;
+		state_EQt_r  <= 0;
+		state_trem_r <= 0;
+		state_chor_r <= 0;
+		state_delay_r <= 0;
 	end
 	else begin
 		state_r <= state_w;
-		state_gate_r <= state_gate_w; state_comp_r <= state_comp_w; state_dist_r <= state_dist_w;
-		state_EQb_r  <= state_EQb_w;  state_EQt_r  <= state_EQt_w;  state_trem_r <= state_trem_w;
-		state_chor_r <= state_chor_w; state_delay_r <= state_delay_w;
+		state_gate_r <= state_gate_w;
+		state_comp_r <= state_comp_w;
+		state_dist_r <= state_dist_w;
+		state_EQb_r  <= state_EQb_w; 
+		state_EQt_r  <= state_EQt_w; 
+		state_trem_r <= state_trem_w;
+		state_chor_r <= state_chor_w;
+		state_delay_r <= state_delay_w;
 	end
 end
 
