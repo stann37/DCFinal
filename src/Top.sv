@@ -131,15 +131,17 @@ assign o_SRAM_LB_N = 1'b1;  // Lower Byte Disable
 assign o_SRAM_UB_N = 1'b1;  // Upper Byte Disable
 
 wire signed [15:0] w_gate_out;
+wire w_gate_valid;
 
 Effect_Gate gate0 (
     .i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
     .i_valid    (sample_valid),      // The sync pulse we created earlier, should be passed on if more effects
-    .i_enable   (effect_en[EFF_GATE]), // Controlled by Switch[0]
-    .i_level    (state_gate_r),      // Controlled by Key0/FSM
-    .i_data     (adc_data),          // Audio IN from Recorder
-    .o_data     (w_gate_out)         // Audio OUT to DAC (or next effect)
+    .i_enable   (effect_en[EFF_GATE]),
+    .i_level    (state_gate_r),
+    .i_data     (adc_data),
+    .o_data     (w_gate_out),
+	.o_valid    (w_gate_valid)
 );
 
 assign dac_data = w_gate_out;
