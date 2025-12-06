@@ -3,8 +3,7 @@ module Triangle_generator (
     input                i_clk,
     input                i_rst_n,
     input                i_start,
-    input                i_stop,
-    input         [1:0]  i_freq,
+    input         [2:0]  i_freq,
     output signed [15:0] o_tri
 );
 
@@ -13,7 +12,7 @@ module Triangle_generator (
 
     logic signed [15:0] tri_data_r, tri_data_w;
     logic [14:0] cnt_r, cnt_w;
-    logic [1:0] freq_r, freq_w;
+    logic [2:0] freq_r, freq_w;
     logic pos_r, pos_w;
     logic state_r, state_w;
 
@@ -36,17 +35,37 @@ module Triangle_generator (
                     freq_w = i_freq;
                     state_w = S_GEN;
                     case (i_freq)
-                        2'b01: begin 
+                        3'd0: begin  // 1 Hz
                             step_w = 2;
                             cnt_max_w = 16000;
                         end
-                        2'b10: begin 
+                        3'd1: begin  // 2 Hz
                             step_w = 4;
                             cnt_max_w = 8000;
                         end
-                        2'b11: begin 
+                        3'd2: begin  // 3 Hz
+                            step_w = 6;
+                            cnt_max_w = 5333;
+                        end
+                        3'd3: begin // 4 Hz
                             step_w = 8;
                             cnt_max_w = 4000;
+                        end
+                        3'd4: begin  // 5 Hz
+                            step_w = 10; 
+                            cnt_max_w = 3200;
+                        end
+                        3'd5: begin  // 6 Hz
+                            step_w = 12; 
+                            cnt_max_w = 2666
+                        end
+                        3'd6: begin  // 7 Hz
+                            step_w = 14; 
+                            cnt_max_w = 2285;
+                        end
+                        3'd7: begin  // 8 Hz
+                            step_w = 16; 
+                            cnt_max_w = 2000;
                         end
                         default: begin 
                             step_w = 4;
@@ -56,7 +75,7 @@ module Triangle_generator (
                 end
             end 
             S_GEN: begin
-                if (i_stop) begin
+                if (!i_start) begin
                     state_w = S_IDLE;
                     tri_data_w = 16'h7000;
                     pos_w = 0;
