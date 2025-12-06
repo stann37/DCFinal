@@ -1,61 +1,51 @@
 module tremolo (
     input                i_clk,
     input                i_rst_n,
-    input  signed [15:0] i_signal,
-    input                i_sel,
-    input                i_start,
-    input         [1:0]  i_rate,  // 00 = 1, 01 = 2, 10 = 3, 11 = 4
-    input         [1:0]  i_depth, // 00 = 0%, 01 = 25%, 10 = 50%, 11 = 100%
-    output signed [15:0] o_signal
+    input                i_valid,
+    input                i_enable,
+    input         [2:0]  i_freq,
+    input  signed [15:0] i_data,
+    output signed [15:0] o_data,
+    output               o_valid
 );
 
-    localparam S_IDLE = 0;
-    localparam S_SEL  = 1;
-    localparam S_RUN  = 2;
+    logic [1:0] freq_r, freq_w;
+    logic       valid_r;
+    logic signed [15:0] tri_data_w;
+    logic signed [15:0] tremolo_data_r, tremolo_data_w;
+    logic signed [31:0] temp_data_w;
 
-    reg [1:0] state_r, state_w;
-    reg [1:0] rate_r, rate_w;
-    reg [1:0] depth_r, depth_w;
+    assign o_data = tremolo_data_r;
+    assign o_valid = valid_r;
 
-    // TODO: output = input × (1 - depth/2 + depth/2 × LFO_waveform)
-    // TODO: LFO_waveform 
+    Triangle_generator tri_gen(
+        .i_clk(i_clk),
+        .i_rst_n(i_rst_n),
+        .i_start(i_enable && i_valid),
+        .i_freq(i_freq),
+        .o_tri(tri_data_w)
+    );
 
     always_comb begin
-        state_w = state_r;
-        case (state_r)
-            S_IDLE: begin
-                if (i_sel) begin
-                    state_w = S_SEL;
-                end
-            end 
-            S_SEL: begin
-                if (i_start) begin
-                    state_w = S_RUN;
-                end
-                else if (!i_sel) begin
-                    state_w = S_IDLE;
-                end
-                else begin
-                    rate_w = i_rate;
-                    depth_w = i_depth;
-                end
-            end 
-            S_RUN: begin
-                
-            end
-        endcase
+        temp_data_w = tri_data_w * i_data;
+        tremolo_data_w = (temp_data_w) >> 15;
     end
 
     always @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
             state_r <= S_IDLE;
             rate_r <= 0;
-            depth_r <= 0;
+            tremolo_data_r <= 0;
+            valid_r <= 0;
         end
         else begin
-            state_r <= state_w;
-            rate_r <= rate_w;
-            depth_r <= depth_w;
+            if (i_valid && i_enable) begin
+                tremolo_data_r <= tremolo_data_w;
+            end
+            else begin
+                tremolo_data_r <= i_data;
+            end
+            valid_r <= i_valid;
         end
     end
 
