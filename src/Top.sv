@@ -132,8 +132,10 @@ assign o_SRAM_UB_N = 1'b1;  // Upper Byte Disable
 
 wire signed [15:0] w_gate_out;
 wire signed [15:0] w_trem_out;
+wire signed [15:0] w_dist_out;
 wire w_gate_valid;
 wire w_trem_valid;
+wire w_dist_valid;
 
 Effect_Gate gate0 (
     .i_clk      (i_AUD_BCLK),
@@ -155,6 +157,17 @@ tremolo tremolo0 (
     .i_data     (w_gate_out),
     .o_data     (w_trem_out),
 	.o_valid    (w_trem_valid)
+) 
+
+Effect_Distortion distortion0 (
+	.i_clk      (i_AUD_BCLK),
+    .i_rst_n    (i_rst_n),
+    .i_valid    (w_trem_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_enable   (effect_en[EFF_DIST]),
+    .i_freq     (state_trem_r),
+    .i_data     (w_trem_out),
+    .o_data     (w_dist_out),
+	.o_valid    (w_dist_valid)
 ) 
 
 assign dac_data = w_gate_out;
