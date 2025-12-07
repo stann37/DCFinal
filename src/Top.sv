@@ -137,7 +137,7 @@ wire w_gate_valid;
 wire w_trem_valid;
 wire w_dist_valid;
 
-Effect_Gate gate0 (
+Effect_Gate_1 gate0 (
     .i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
     .i_valid    (sample_valid),      // The sync pulse we created earlier, should be passed on if more effects
@@ -151,7 +151,7 @@ Effect_Gate gate0 (
 tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
-    .i_valid    (sample_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_valid    (w_gate_valid),      // The sync pulse we created earlier, should be passed on if more effects
     .i_enable   (effect_en[EFF_TREM]),
     .i_freq     (state_trem_r),
     .i_data     (w_gate_out),
