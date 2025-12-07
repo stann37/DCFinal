@@ -1,6 +1,7 @@
 module tremolo (
     input                i_clk,
     input                i_rst_n,
+    input                i_clk_tri,
     input                i_valid,
     input                i_enable,
     input         [2:0]  i_freq,
@@ -19,7 +20,7 @@ module tremolo (
     assign o_valid = valid_r;
 
     Triangle_generator tri_gen(
-        .i_clk(i_clk),
+        .i_clk(i_clk_tri),
         .i_rst_n(i_rst_n),
         .i_start(i_enable && i_valid),
         .i_freq(i_freq),

@@ -13,7 +13,7 @@ module Effect_Distortion (
     logic [2:0] level;
     logic signed [15:0] max_abs;
     assign level = (i_level == 3'b0) ? 3'b111 : i_level;
-    assign max_abs = {1'b0, level, 12'b0};
+    assign max_abs = {2'b0, level, 11'b0};
 
     // p1
     logic p1_valid_r, p1_enable_r;

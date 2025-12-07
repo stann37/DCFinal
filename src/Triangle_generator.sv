@@ -37,39 +37,39 @@ module Triangle_generator (
                     case (i_freq)
                         3'd0: begin  // 1 Hz
                             step_w = 2;
-                            cnt_max_w = 16000;
+                            cnt_max_w = 50000;
                         end
                         3'd1: begin  // 2 Hz
                             step_w = 4;
-                            cnt_max_w = 8000;
+                            cnt_max_w = 25000;
                         end
                         3'd2: begin  // 3 Hz
                             step_w = 6;
-                            cnt_max_w = 5333;
+                            cnt_max_w = 16666;
                         end
                         3'd3: begin // 4 Hz
                             step_w = 8;
-                            cnt_max_w = 4000;
+                            cnt_max_w = 12500;
                         end
                         3'd4: begin  // 5 Hz
                             step_w = 10; 
-                            cnt_max_w = 3200;
+                            cnt_max_w = 10000;
                         end
                         3'd5: begin  // 6 Hz
                             step_w = 12; 
-                            cnt_max_w = 2666;
+                            cnt_max_w = 8333;
                         end
                         3'd6: begin  // 7 Hz
                             step_w = 14; 
-                            cnt_max_w = 2285;
+                            cnt_max_w = 7143;
                         end
                         3'd7: begin  // 8 Hz
                             step_w = 16; 
-                            cnt_max_w = 2000;
+                            cnt_max_w = 6250;
                         end
                         default: begin 
                             step_w = 4;
-                            cnt_max_w = 16000;
+                            cnt_max_w = 25000;
                         end
                     endcase
                 end
