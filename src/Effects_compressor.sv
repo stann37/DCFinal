@@ -62,6 +62,9 @@ module Effect_Compressor (
     // ============================================================
     logic [15:0] current_gain_r, next_gain;
     logic [15:0] target_gain;
+    logic signed [31:0] compressed_signal;
+    logic signed [31:0] final_signal;
+
 
     // Attack/Release Constants
     // Attack (Gain Reduction): Fast but not instant (prevents clicking)
@@ -70,6 +73,7 @@ module Effect_Compressor (
     localparam RELEASE_SHIFT = 9;
 
     always_comb begin
+        next_gain = current_gain_r; // Default: Hold current gain
         if (!i_enable) begin
             next_gain = 16'hFFFF; // Bypass: Gain = 1.0
         end else begin
@@ -117,14 +121,12 @@ module Effect_Compressor (
                 if (i_enable) begin
                     // 3. Apply Compression Gain (Reduction)
                     // Result = Input * Current_Gain (Q16.16)
-                    logic signed [31:0] compressed_signal;
                     compressed_signal = (i_data * current_gain_r) >>> 16;
 
                     // 4. Apply Makeup Gain (Boost)
                     // Makeup Gain is Q4.12 format. 
                     // Example: 16'h2000 = 2.0. 
                     // We multiply and then shift right by 12.
-                    logic signed [31:0] final_signal;
                     final_signal = (compressed_signal * makeup_gain) >>> 12;
 
                     // 5. Hard Limiter (Saturation) to prevent overflow clipping

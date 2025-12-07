@@ -159,29 +159,30 @@ Effect_Compressor compressor0 (
 	.i_data     (w_gate_out),
 	.o_data     (w_comp_out),
 	.o_valid    (w_comp_valid)
-)
+);
 
 Effect_Distortion distortion0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
     .i_valid    (w_comp_valid),      // The sync pulse we created earlier, should be passed on if more effects
     .i_enable   (effect_en[EFF_DIST]),
-    .i_freq     (state_trem_r),
+    .i_level    (state_dist_r),
     .i_data     (w_comp_out),
     .o_data     (w_dist_out),
 	.o_valid    (w_dist_valid)
-) 
+);
 
 tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
+	.i_clk_tri  (i_clk_100k),
     .i_valid    (w_dist_valid),      // The sync pulse we created earlier, should be passed on if more effects
     .i_enable   (effect_en[EFF_TREM]),
     .i_freq     (state_trem_r),
     .i_data     (w_dist_out),
     .o_data     (w_trem_out),
 	.o_valid    (w_trem_valid)
-) 
+);
 
 assign dac_data = w_trem_out; // here
 
