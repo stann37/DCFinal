@@ -33,8 +33,7 @@ module tremolo (
 
     always @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
-            state_r <= S_IDLE;
-            rate_r <= 0;
+            freq_r <= 0;
             tremolo_data_r <= 0;
             valid_r <= 0;
         end

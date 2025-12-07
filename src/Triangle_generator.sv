@@ -57,7 +57,7 @@ module Triangle_generator (
                         end
                         3'd5: begin  // 6 Hz
                             step_w = 12; 
-                            cnt_max_w = 2666
+                            cnt_max_w = 2666;
                         end
                         3'd6: begin  // 7 Hz
                             step_w = 14; 
