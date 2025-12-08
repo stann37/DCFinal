@@ -134,10 +134,12 @@ wire signed [15:0] w_gate_out;
 wire signed [15:0] w_trem_out;
 wire signed [15:0] w_dist_out;
 wire signed [15:0] w_comp_out;
+wire signed [15:0] w_eq_out;
 wire w_gate_valid;
 wire w_trem_valid;
 wire w_dist_valid;
 wire w_comp_valid;
+wire w_eq_valid;
 
 Effect_Gate_1 gate0 (
     .i_clk      (i_AUD_BCLK),
@@ -172,14 +174,26 @@ Effect_Distortion distortion0 (
 	.o_valid    (w_dist_valid)
 );
 
+Effect_EQ eq0 (
+	.i_clk      (i_AUD_BCLK),
+	.i_rst_n    (i_rst_n),
+	.i_valid    (w_dist_valid),      // The sync pulse we created earlier, should be passed on if more effects
+	.i_enable   (effect_en[EFF_EQ_B] || effect_en[EFF_EQ_T]),
+	.i_level_bass     (state_EQb_r),
+	.i_level_treble     (state_EQt_r),
+	.i_data     (w_dist_out),
+	.o_data     (w_eq_out),
+	.o_valid    (w_eq_valid)
+);
+
 tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),
-    .i_valid    (w_dist_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_valid    (w_eq_valid),      // The sync pulse we created earlier, should be passed on if more effects
     .i_enable   (effect_en[EFF_TREM]),
     .i_freq     (state_trem_r),
-    .i_data     (w_dist_out),
+    .i_data     (w_eq_out),
     .o_data     (w_trem_out),
 	.o_valid    (w_trem_valid)
 );

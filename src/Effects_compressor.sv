@@ -42,6 +42,8 @@ module Effect_Compressor (
         end
     end
 
+    assign gain_adjusted = compressed_abs <<< makeup_shift;
+    
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
             o_data  <= 16'd0;
@@ -51,8 +53,6 @@ module Effect_Compressor (
 
             if (i_valid) begin
                 if (i_enable) begin
-                    gain_adjusted = compressed_abs <<< makeup_shift;
-
                     if (i_data[15]) // Was originally negative
                         o_data <= -gain_adjusted;
                     else            // Was originally positive

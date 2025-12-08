@@ -94,12 +94,14 @@ module Effect_EQ (
             o_valid     <= 1'b0;
         end else begin
             o_valid <= i_valid;
+            lp_bass_reg <= comp_bass;
+            lp_wide_reg <= lp_wide_reg + (diff_wide >>> 1); 
 
             if (i_valid) begin
-                lp_bass_reg <= comp_bass;
-                lp_wide_reg <= lp_wide_reg + (diff_wide >>> 1); 
-
                 o_data <= saturated_out;
+            end
+            else begin
+                o_data <= i_data;
             end
         end
     end
