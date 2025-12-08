@@ -34,8 +34,8 @@ module Effect_Compressor (
     logic signed [15:0] gain_adjusted;
 
     always_comb begin
+        diff = abs_data - threshold;
         if (abs_data > threshold) begin
-            diff = abs_data - threshold;
             compressed_abs = threshold + (diff >>> 2); 
         end else begin
             compressed_abs = abs_data;
