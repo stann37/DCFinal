@@ -6,7 +6,7 @@ module Effect_EQ (
     input  [2:0] i_level_treble,
     input  [2:0] i_level_bass,
     input  signed [15:0] i_data,
-    output signed [15:0] o_data,
+    output logic signed [15:0] o_data,
     output logic o_valid         // Trigger OUT
 );
 
@@ -15,48 +15,60 @@ module Effect_EQ (
 
     always_comb begin
         case (i_level_treble)
-            3'd0: treb_gain = 9'b00000_0100; // 0.25 
-            3'd1: treb_gain = 9'b00000_1000; // 0.50
-            3'd2: treb_gain = 9'b00000_1100; // 0.75
-            3'd3: treb_gain = 9'b00001_0000; // 1.0
-            3'd4: treb_gain = 9'b00001_0100; // 1.25
+            3'd0: treb_gain = 9'b00000_0000; // 0.0 (Total Cut)
+            3'd1: treb_gain = 9'b00000_0100; // 0.25
+            3'd2: treb_gain = 9'b00000_1000; // 0.50
+            3'd3: treb_gain = 9'b00000_1100; // 0.75
+            3'd4: treb_gain = 9'b00001_0000; // 1.0 (Flat)
             3'd5: treb_gain = 9'b00001_1000; // 1.50
-            3'd6: treb_gain = 9'b00001_1100; // 1.75
-            3'd7: treb_gain = 9'b00010_0000; // 2.0
+            3'd6: treb_gain = 9'b00010_0000; // 2.00
+            3'd7: treb_gain = 9'b00011_0000; // 3.00
         endcase
         case (i_level_bass)
-            3'd0: bass_gain = 9'b00000_0100; // 0.25 
-            3'd1: bass_gain = 9'b00000_1000; // 0.50
-            3'd2: bass_gain = 9'b00000_1100; // 0.75
-            3'd3: bass_gain = 9'b00001_0000; // 1.0
-            3'd4: bass_gain = 9'b00001_0100; // 1.25
+            3'd0: bass_gain = 9'b00000_0000; // 0.0 (Total Cut)
+            3'd1: bass_gain = 9'b00000_0100; // 0.25
+            3'd2: bass_gain = 9'b00000_1000; // 0.50
+            3'd3: bass_gain = 9'b00000_1100; // 0.75
+            3'd4: bass_gain = 9'b00001_0000; // 1.0 (Flat)
             3'd5: bass_gain = 9'b00001_1000; // 1.50
-            3'd6: bass_gain = 9'b00001_1100; // 1.75
-            3'd7: bass_gain = 9'b00010_0000; // 2.0
+            3'd6: bass_gain = 9'b00010_0000; // 2.00
+            3'd7: bass_gain = 9'b00011_0000; // 3.00
         endcase
     end
 
-    logic signed [15:0] lp_bass_reg; 
-    logic signed [15:0] lp_wide_reg;
-    logic signed [15:0] diff_bass;
-    logic signed [15:0] diff_wide;
+    // 2nd Order Filter Registers (Stage 1 and Stage 2)
+    logic signed [15:0] lp_bass_s1; 
+    logic signed [15:0] lp_bass_s2; 
+    
+    logic signed [15:0] lp_wide_s1;
+    logic signed [15:0] lp_wide_s2;
+
+    // Filter Intermediates
+    logic signed [15:0] w_bass_s1, w_bass_s2;
+    logic signed [15:0] w_wide_s1, w_wide_s2;
 
     logic signed [15:0] comp_bass;
     logic signed [15:0] comp_mid;
     logic signed [15:0] comp_treb;
 
-    logic signed [15:0] next_wide;
-
     always_comb begin
-        diff_bass = i_data - lp_bass_reg;
-        comp_bass = lp_bass_reg + (diff_bass >>> 4); // ignore treb, mid
+        // --- Bass Filter Chain (Narrow) ---
+        // Alpha ~ 1/16 (>>> 4)
+        w_bass_s1 = lp_bass_s1 + ((i_data - lp_bass_s1) >>> 4);
+        w_bass_s2 = lp_bass_s2 + ((w_bass_s1 - lp_bass_s2) >>> 4);
+        
+        comp_bass = w_bass_s2; // Pure Bass
 
-        diff_wide = i_data - lp_wide_reg;
-        next_wide = lp_wide_reg + (diff_wide >>> 1); // ignore treb
+        // --- Wide Filter Chain (Bass + Mid) ---
+        // Alpha ~ 1/2 (>>> 1)
+        w_wide_s1 = lp_wide_s1 + ((i_data - lp_wide_s1) >>> 1);
+        w_wide_s2 = lp_wide_s2 + ((w_wide_s1 - lp_wide_s2) >>> 1);
 
-        comp_mid  = next_wide - comp_bass;
-
-        comp_treb = i_data - next_wide;
+        // --- Band Separation ---
+        // Mids = (Bass+Mids) - Bass
+        // Treble = Input - (Bass+Mids)
+        comp_mid  = w_wide_s2 - comp_bass;
+        comp_treb = i_data - w_wide_s2;
     end
 
     logic signed [24:0] bass_out;
@@ -67,10 +79,10 @@ module Effect_EQ (
     always_comb begin
         bass_out = comp_bass * bass_gain;
         treb_out = comp_treb * treb_gain;
-        mid_out  = comp_mid <<< 4;
+        mid_out  = comp_mid <<< 4; // Unity gain for Mids (matches Q4.4)
+        
         summed_result = bass_out + mid_out + treb_out;
     end
-
 
     logic signed [24:0] final_shifted;
     logic signed [15:0] saturated_out;
@@ -88,20 +100,23 @@ module Effect_EQ (
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
-            lp_bass_reg <= 16'd0;
-            lp_wide_reg <= 16'd0;
-            o_data      <= 16'd0;
-            o_valid     <= 1'b0;
+            lp_bass_s1 <= 16'd0;
+            lp_bass_s2 <= 16'd0;
+            lp_wide_s1 <= 16'd0;
+            lp_wide_s2 <= 16'd0;
+            o_data     <= 16'd0;
+            o_valid    <= 1'b0;
         end else begin
             o_valid <= i_valid;
-            lp_bass_reg <= comp_bass;
-            lp_wide_reg <= lp_wide_reg + (diff_wide >>> 1); 
-
+            lp_bass_s1 <= w_bass_s1;
+            lp_bass_s2 <= w_bass_s2;
+            lp_wide_s1 <= w_wide_s1;
+            lp_wide_s2 <= w_wide_s2;
             if (i_valid) begin
                 o_data <= saturated_out;
-            end
+            end 
             else begin
-                o_data <= i_data;
+                o_data <= o_data; 
             end
         end
     end
