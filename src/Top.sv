@@ -293,8 +293,8 @@ always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 		state_gate_r <= 0;
 		state_comp_r <= 0;
 		state_dist_r <= 0;
-		state_EQb_r  <= 0;
-		state_EQt_r  <= 0;
+		state_EQb_r  <= 3'd3;
+		state_EQt_r  <= 3'd3;
 		state_trem_r <= 0;
 		state_chor_r <= 0;
 		state_delay_r <= 0;
