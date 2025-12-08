@@ -186,6 +186,17 @@ Effect_EQ eq0 (
 	.o_valid    (w_eq_valid)
 );
 
+Effect_Chorus chorus0 (
+	.i_clk      (i_AUD_BCLK),
+	.i_rst_n    (),
+	.i_valid    (),
+	.i_enable   (),
+	.i_level    (),
+	.i_data     (),
+	.o_data     (),
+	.o_valid    ()
+);
+
 tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
