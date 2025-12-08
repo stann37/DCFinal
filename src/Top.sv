@@ -155,18 +155,19 @@ Effect_Gate gate0 (
 Effect_Compressor compressor0 (
 	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
-	.i_valid    (w_gate_valid),      // The sync pulse we created earlier, should be passed on if more effects
+	.i_valid    (w_gate_valid),
 	.i_enable   (effect_en[EFF_COMP]),
 	.i_level    (state_comp_r),
 	.i_data     (w_gate_out),
 	.o_data     (w_comp_out),
 	.o_valid    (w_comp_valid)
 );
+// note that compressor may induce makeup gain, be careful when chaining effects
 
 Effect_Distortion distortion0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
-    .i_valid    (w_comp_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_valid    (w_comp_valid),
     .i_enable   (effect_en[EFF_DIST]),
     .i_level    (state_dist_r),
     .i_data     (w_comp_out),
@@ -177,7 +178,7 @@ Effect_Distortion distortion0 (
 Effect_EQ eq0 (
 	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
-	.i_valid    (w_dist_valid),      // The sync pulse we created earlier, should be passed on if more effects
+	.i_valid    (w_dist_valid),
 	.i_enable   (effect_en[EFF_EQ_B] || effect_en[EFF_EQ_T]),
 	.i_level_bass     (state_EQb_r),
 	.i_level_treble     (state_EQt_r),
