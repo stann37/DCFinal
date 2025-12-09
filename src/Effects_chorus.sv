@@ -8,8 +8,8 @@ module Effect_Chorus ( // try use M9K Block RAM
     output signed [15:0] o_data,
     output logic         o_valid
 );
-
-    localparam BUFFER_SIZE = 1024;
+    // we need 20 - 30 ms variable delay
+    localparam BUFFER_SIZE = 10240;
     logic signed [15:0] buffer [0:BUFFER_SIZE-1];
     
 endmodule
