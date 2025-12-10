@@ -72,7 +72,52 @@ module Effect_EQ (
         endcase
     end
 
+    logic signed [15:0] w_bass_out_data;
+    logic w_bass_out_valid;
 
+    logic signed [15:0] w_treb_out_data;
+    logic w_treb_out_valid;
+
+    Biquad_Filter u_bass (
+        .i_clk(i_clk),
+        .i_rst_n(i_rst_n),
+        .i_valid(i_valid),
+        .i_data(i_data),
+        
+        .i_a0(bass_a0), .i_a1(bass_a1), .i_a2(bass_a2),
+        .i_b1(bass_b1), .i_b2(bass_b2),
+        
+        .o_data(w_bass_out_data),
+        .o_valid(w_bass_out_valid)
+    );
+
+    Biquad_Filter u_treble (
+        .i_clk(i_clk),
+        .i_rst_n(i_rst_n),
+        .i_valid(w_bass_out_valid),    // Triggered by Bass Output
+        .i_data(w_bass_out_data),      // Input is Bass Output
+        
+        // Connect Treble Coefficients
+        .i_a0(treb_a0), .i_a1(treb_a1), .i_a2(treb_a2),
+        .i_b1(treb_b1), .i_b2(treb_b2),
+        
+        .o_data(w_treb_out_data),
+        .o_valid(w_treb_out_valid)
+    );
+
+    always_comb begin
+        if (i_enable) begin
+            // Active Mode: Use Filter Output (Latency = 2 Cycles)
+            // Valid flag comes from the filter chain, maintaining sync
+            o_data  = w_treb_data;
+            o_valid = w_treb_valid;
+        end else begin
+            // Bypass Mode: Use Input Directly (Latency = 0 Cycles)
+            // Valid flag comes from input, maintaining sync
+            o_data  = i_data;
+            o_valid = i_valid;
+        end
+    end
 endmodule
 
 
@@ -92,4 +137,8 @@ module Biquad_Filter (
     output logic o_valid
 );
     // y[n] = a0*x[n] + a1*x[n-1] + a2*x[n-2] – b1*y[n-1] – b2*y[n-2]
+    logic signed [15:0] x_n1, x_n2; // previous inputs
+    logic signed [15:0] y_n1, y_n2; // previous outputs
+
+
 endmodule
