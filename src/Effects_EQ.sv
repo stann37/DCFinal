@@ -97,7 +97,6 @@ module Effect_EQ (
         .i_valid(w_bass_out_valid),    // Triggered by Bass Output
         .i_data(w_bass_out_data),      // Input is Bass Output
         
-        // Connect Treble Coefficients
         .i_a0(treb_a0), .i_a1(treb_a1), .i_a2(treb_a2),
         .i_b1(treb_b1), .i_b2(treb_b2),
         
@@ -137,8 +136,43 @@ module Biquad_Filter (
     output logic o_valid
 );
     // y[n] = a0*x[n] + a1*x[n-1] + a2*x[n-2] – b1*y[n-1] – b2*y[n-2]
-    logic signed [15:0] x_n1, x_n2; // previous inputs
-    logic signed [15:0] y_n1, y_n2; // previous outputs
+    logic signed [15:0] x_d1, x_d2;
+    logic signed [15:0] y_d1, y_d2;
 
+    logic signed [47:0] mul_a0, mul_a1, mul_a2;
+    logic signed [47:0] mul_b1, mul_b2;
+    logic signed [63:0] acc;
 
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            x_d1 <= 0;
+            x_d2 <= 0;
+            y_d1 <= 0;
+            y_d2 <= 0;
+            o_data <= 0;
+            o_valid <= 0;
+        end else begin
+            o_valid <= i_valid;
+            if (i_valid) begin
+                mul_a0 = i_data * i_a0;
+                mul_a1 = x_d1   * i_a1;
+                mul_a2 = x_d2   * i_a2;
+                
+                mul_b1 = y_d1   * i_b1;
+                mul_b2 = y_d2   * i_b2;
+
+                // Formula: y[n] = (a0*x0 + a1*x1 + a2*x2) - (b1*y1 + b2*y2)
+                acc = (mul_a0 + mul_a1 + mul_a2) - (mul_b1 + mul_b2);
+
+                if ((acc >>> 28) > 32767)       o_data <= 32767;
+                else if ((acc >>> 28) < -32768) o_data <= -32768;
+                else                            o_data <= acc[43:28];
+                
+                x_d2 <= x_d1;
+                x_d1 <= i_data;
+                y_d2 <= y_d1;
+                y_d1 <= o_data;
+            end
+        end
+    end
 endmodule
