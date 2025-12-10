@@ -151,6 +151,7 @@ Effect_Gate gate0 (
     .o_data     (w_gate_out),
 	.o_valid    (w_gate_valid)
 );
+// guitar lever to top, tone 1, level 2
 
 Effect_Compressor compressor0 (
 	.i_clk      (i_AUD_BCLK),
@@ -316,7 +317,7 @@ SevenHexDecoder hex_val_inst (
 always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_I2C; 
-		state_gate_r <= 0;
+		state_gate_r <= 3'd2;
 		state_comp_r <= 0;
 		state_dist_r <= 0;
 		state_EQb_r  <= 3'd4;
