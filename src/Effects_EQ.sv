@@ -14,6 +14,8 @@ module Effect_EQ (
     logic signed [31:0] bass_a0, bass_a1, bass_a2, bass_b1, bass_b2;
     logic signed [31:0] treb_a0, treb_a1, treb_a2, treb_b1, treb_b2;
 
+    // -12 dB to +9 dB
+    // level 4 is flat
     always_comb begin
         // Bass LUT
         case (i_level_bass)
