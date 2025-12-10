@@ -22,14 +22,13 @@ module Effect_Gate (
     always_comb begin
         case (i_level)
             3'd0: threshold = 16'd0;
-            3'd1: threshold = 16'd50;
-            3'd2: threshold = 16'd100;
-            3'd3: threshold = 16'd150;
-            3'd4: threshold = 16'd200;
-            3'd5: threshold = 16'd250;
-            3'd6: threshold = 16'd300;
-            3'd7: threshold = 16'd350;
-            default: threshold = 16'd0;
+            3'd1: threshold = 16'd25;
+            3'd2: threshold = 16'd50;
+            3'd3: threshold = 16'd75;
+            3'd4: threshold = 16'd100;
+            3'd5: threshold = 16'd125;
+            3'd6: threshold = 16'd150;
+            3'd7: threshold = 16'd175;
         endcase
     end
 
