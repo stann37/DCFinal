@@ -47,8 +47,8 @@ localparam EFF_COMP   = 3'd1;
 localparam EFF_DIST   = 3'd2;
 localparam EFF_EQ_B   = 3'd3;
 localparam EFF_EQ_T   = 3'd4;
-localparam EFF_TREM   = 3'd5;
-localparam EFF_CHOR   = 3'd6;
+localparam EFF_CHOR   = 3'd5;
+localparam EFF_TREM   = 3'd6;
 localparam EFF_DEL    = 3'd7;
 
 logic [2:0] state_w, state_r;
