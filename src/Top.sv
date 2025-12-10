@@ -199,7 +199,7 @@ Effect_Chorus chorus0 (
 	.o_valid    ()
 );
 
-tremolo tremolo0 (
+Effect_Tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),

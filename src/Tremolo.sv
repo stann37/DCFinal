@@ -1,4 +1,4 @@
-module tremolo (
+module Effect_Tremolo (
     input                i_clk,
     input                i_rst_n,
     input                i_clk_tri,
