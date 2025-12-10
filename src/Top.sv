@@ -144,14 +144,14 @@ wire w_eq_valid;
 Effect_Gate gate0 (
     .i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
-    .i_valid    (sample_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_valid    (sample_valid),
     .i_enable   (effect_en[EFF_GATE]),
     .i_level    (state_gate_r),
     .i_data     (adc_data),
     .o_data     (w_gate_out),
 	.o_valid    (w_gate_valid)
 );
-// guitar lever to top, tone 1, level 2
+// guitar lever to top, tone 1
 
 Effect_Compressor compressor0 (
 	.i_clk      (i_AUD_BCLK),
@@ -203,7 +203,7 @@ Effect_Tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),
-    .i_valid    (w_eq_valid),      // The sync pulse we created earlier, should be passed on if more effects
+    .i_valid    (w_eq_valid),
     .i_enable   (effect_en[EFF_TREM]),
     .i_freq     (state_trem_r),
     .i_data     (w_eq_out),
