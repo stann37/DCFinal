@@ -46,28 +46,28 @@ module Effect_EQ (
 
         case (i_level_treble)
             3'd0: begin // -12dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd80067259; treb_a1 = -32'd105919965; treb_a2 = 32'd40034125; treb_b1 = -32'd442812889; treb_b2 = 32'd188558853;
             end
             3'd1: begin // -9dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd109432643; treb_a1 = -32'd144767059; treb_a2 = 32'd54716999; treb_b1 = -32'd425631487; treb_b2 = 32'd176578614;
             end
             3'd2: begin // -6dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd148675449; treb_a1 = -32'd196680872; treb_a2 = 32'd74338645; treb_b1 = -32'd405534163; treb_b2 = 32'd163431930;
             end
             3'd3: begin // -3dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd200585074; treb_a1 = -32'd265351459; treb_a2 = 32'd100293779; treb_b1 = -32'd382147090; treb_b2 = 32'd149239028;
             end
             3'd4: begin // 0dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd268435456; treb_a1 = -32'd355109871; treb_a2 = 32'd134219390; treb_b1 = -32'd355109871; treb_b2 = 32'd134219390;
             end
             3'd5: begin // +3dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd359237069; treb_a1 = -32'd511413069; treb_a2 = 32'd199720975; treb_b1 = -32'd355109871; treb_b2 = 32'd134219390;
             end
             3'd6: begin // +6dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd484663706; treb_a1 = -32'd732197204; treb_a2 = 32'd295078474; treb_b1 = -32'd355109871; treb_b2 = 32'd134219390;
             end
             3'd7: begin // +9dB
-                treb_a0 = 32'd; treb_a1 = 32'd; treb_a2 = 32'd; treb_b1 = 32'd; treb_b2 = 32'd;
+                treb_a0 = 32'd658465265; treb_a1 = -32'd1044063085; treb_a2 = 32'd433142795; treb_b1 = -32'd355109871; treb_b2 = 32'd134219390;
             end
         endcase
     end
@@ -91,5 +91,5 @@ module Biquad_Filter (
     output logic signed [15:0] o_data,
     output logic o_valid
 );
-
+    // y[n] = a0*x[n] + a1*x[n-1] + a2*x[n-2] – b1*y[n-1] – b2*y[n-2]
 endmodule
