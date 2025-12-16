@@ -68,7 +68,6 @@ module Triangle_generator (
         state_w = state_r;
         pos_w = pos_r;
         cnt_w = cnt_r;
-        cnt_max_w= cnt_max_r;
         if (cnt_r >= cnt_max_r) begin
             pos_w = !pos_r;
             cnt_w = 0;
