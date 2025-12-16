@@ -70,7 +70,7 @@ logic daclrck_prev;
 wire  sample_valid;
 
 // Detect rising edge of DACLRCK to signify start of new Left Channel sample
-always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
+always_ff @(posedge i_clk or negedge i_rst_n) begin
     if (!i_rst_n) daclrck_prev <= 1'b0;
     else          daclrck_prev <= i_AUD_DACLRCK;
 end
@@ -125,10 +125,11 @@ AudPlayer player0(
 assign o_SRAM_ADDR = 20'd0;
 assign io_SRAM_DQ  = 16'dz; // High Impedance
 assign o_SRAM_WE_N = 1'b1;  // Write Disable (Active Low)
-assign o_SRAM_CE_N = 1'b1;  // Chip Disable (Active Low)
-assign o_SRAM_OE_N = 1'b1;  // Output Disable (Active Low)
-assign o_SRAM_LB_N = 1'b1;  // Lower Byte Disable
-assign o_SRAM_UB_N = 1'b1;  // Upper Byte Disable
+
+assign o_SRAM_CE_N = 1'b0;  // Chip Enable
+assign o_SRAM_OE_N = 1'b0;  // Output Enable
+assign o_SRAM_LB_N = 1'b0;  // Lower Byte Enable
+assign o_SRAM_UB_N = 1'b0;  // Upper Byte Enable
 
 wire signed [15:0] w_gate_out;
 wire signed [15:0] w_trem_out;
@@ -142,7 +143,7 @@ wire w_comp_valid;
 wire w_eq_valid;
 
 Effect_Gate gate0 (
-    .i_clk      (i_AUD_BCLK),
+    .i_clk      (i_clk),
     .i_rst_n    (i_rst_n),
     .i_valid    (sample_valid),
     .i_enable   (effect_en[EFF_GATE]),
@@ -154,7 +155,7 @@ Effect_Gate gate0 (
 // guitar lever to top, tone 1
 
 Effect_Compressor compressor0 (
-	.i_clk      (i_AUD_BCLK),
+	.i_clk      (i_clk),
 	.i_rst_n    (i_rst_n),
 	.i_valid    (w_gate_valid),
 	.i_enable   (effect_en[EFF_COMP]),
@@ -166,7 +167,7 @@ Effect_Compressor compressor0 (
 // note that compressor may induce makeup gain, be careful when chaining effects
 
 Effect_Distortion distortion0 (
-	.i_clk      (i_AUD_BCLK),
+	.i_clk      (i_clk),
     .i_rst_n    (i_rst_n),
     .i_valid    (w_comp_valid),
     .i_enable   (effect_en[EFF_DIST]),
@@ -177,7 +178,7 @@ Effect_Distortion distortion0 (
 );
 
 Effect_EQ eq0 (
-	.i_clk      (i_AUD_BCLK),
+	.i_clk      (i_clk),
 	.i_rst_n    (i_rst_n),
 	.i_valid    (w_dist_valid),
 	.i_enable   (effect_en[EFF_EQ_B] || effect_en[EFF_EQ_T]),
@@ -189,7 +190,7 @@ Effect_EQ eq0 (
 );
 
 Effect_Chorus chorus0 (
-	.i_clk      (i_AUD_BCLK),
+	.i_clk      (i_clk),
 	.i_rst_n    (),
 	.i_valid    (),
 	.i_enable   (),
@@ -200,7 +201,7 @@ Effect_Chorus chorus0 (
 );
 
 Effect_Tremolo tremolo0 (
-	.i_clk      (i_AUD_BCLK),
+	.i_clk      (i_clk),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),
     .i_valid    (w_eq_valid),
@@ -314,7 +315,7 @@ SevenHexDecoder hex_val_inst (
 );
 
 // Sequential Logic
-always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
+always_ff @(posedge i_clk or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_I2C; 
 		state_gate_r <= 3'd2;
