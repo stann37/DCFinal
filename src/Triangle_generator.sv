@@ -70,32 +70,41 @@ module Triangle_generator (
         cnt_w = cnt_r;
         step_w = step_r;
         cnt_max_w= cnt_max_r;
-        case (state_r)
-            S_IDLE: begin
-                if (i_start) begin
-                    state_w = S_GEN;
-                end
-            end 
-            S_GEN: begin
-                if (!i_start) begin
-                    state_w = S_IDLE;
-                    tri_data_w = 32'sh4000_0000;
-                    pos_w = 0;
-                    cnt_w = 0;
-                end
-                else begin
-                    if (cnt_r == cnt_max_r) begin
-                        pos_w = !pos_r;
-                        cnt_w = 0;
-                    end
-                    else begin
-                        if (pos_r) tri_data_w = tri_data_r + step_r;
-                        else tri_data_w = tri_data_r - step_r;
-                        cnt_w = cnt_r + 1;
-                    end
-                end
-            end 
-        endcase
+        if (cnt_r >= cnt_max_r) begin
+            pos_w = !pos_r;
+            cnt_w = 0;
+        end
+        else begin
+            if (pos_r) tri_data_w = tri_data_r + step_r;
+            else tri_data_w = tri_data_r - step_r;
+            cnt_w = cnt_r + 1;
+        end
+        // case (state_r)
+        //     S_IDLE: begin
+        //         if (i_start) begin
+        //             state_w = S_GEN;
+        //         end
+        //     end 
+        //     S_GEN: begin
+        //         if (!i_start) begin
+        //             state_w = S_IDLE;
+        //             tri_data_w = 32'sh4000_0000;
+        //             pos_w = 0;
+        //             cnt_w = 0;
+        //         end
+        //         else begin
+        //             if (cnt_r == cnt_max_r) begin
+        //                 pos_w = !pos_r;
+        //                 cnt_w = 0;
+        //             end
+        //             else begin
+        //                 if (pos_r) tri_data_w = tri_data_r + step_r;
+        //                 else tri_data_w = tri_data_r - step_r;
+        //                 cnt_w = cnt_r + 1;
+        //             end
+        //         end
+        //     end 
+        // endcase
     end
 
     always @(posedge i_clk or negedge i_rst_n) begin
