@@ -107,41 +107,19 @@ module Biquad_Filter (
     logic signed [15:0] x_d1, x_d2;
     logic signed [15:0] y_d1, y_d2;
     
-    logic signed [47:0] mul_a0_reg, mul_a1_reg, mul_a2_reg;
-    logic signed [47:0] mul_b1_reg, mul_b2_reg;
-
-    logic valid_stage1;            // Delays i_valid by 1 cycle
-    logic signed [15:0] i_data_d1;
-
-    always_ff @(posedge i_clk or negedge i_rst_n) begin
-        if (!i_rst_n) begin
-            mul_a0_reg   <= 0;
-            mul_a1_reg   <= 0;
-            mul_a2_reg   <= 0;
-            mul_b1_reg   <= 0;
-            mul_b2_reg   <= 0;
-            valid_stage1 <= 0;
-            i_data_d1    <= 0;
-        end else begin
-            valid_stage1 <= i_valid;
-
-            if (i_valid) begin
-                i_data_d1 <= i_data;
-
-                mul_a0_reg <= i_data * i_a0;
-                mul_a1_reg <= x_d1   * i_a1;
-                mul_a2_reg <= x_d2   * i_a2;
-                mul_b1_reg <= y_d1   * i_b1;
-                mul_b2_reg <= y_d2   * i_b2;
-            end
-        end
-    end
-
+    logic signed [47:0] mul_a0, mul_a1, mul_a2;
+    logic signed [47:0] mul_b1, mul_b2;
     logic signed [63:0] acc;
     logic signed [15:0] next_out;
 
     always_comb begin
-        acc = (mul_a0_reg + mul_a1_reg + mul_a2_reg) - (mul_b1_reg + mul_b2_reg);
+        mul_a0 = i_data * i_a0;
+        mul_a1 = x_d1   * i_a1;
+        mul_a2 = x_d2   * i_a2;
+        mul_b1 = y_d1   * i_b1;
+        mul_b2 = y_d2   * i_b2;
+
+        acc = (mul_a0 + mul_a1 + mul_a2) - (mul_b1 + mul_b2);
 
         if ((acc >>> 28) > 32767)       next_out = 32767;
         else if ((acc >>> 28) < -32768) next_out = -32768;
@@ -154,18 +132,17 @@ module Biquad_Filter (
             x_d2 <= 0;
             y_d1 <= 0;
             y_d2 <= 0;
-            o_data  <= 0;
+            o_data <= 0;
             o_valid <= 0;
         end else begin
-            o_valid <= valid_stage1;
+            o_valid <= i_valid;
 
-            if (valid_stage1) begin
+            if (i_valid) begin
                 x_d2 <= x_d1;
-                x_d1 <= i_data_d1;
-
+                x_d1 <= i_data;
                 y_d2 <= y_d1;
-                y_d1 <= next_out;
-
+                y_d1 <= next_out; // Use the result we just calculated
+                
                 o_data <= next_out;
             end
         end
