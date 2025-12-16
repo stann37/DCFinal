@@ -20,14 +20,14 @@ module tremolo_tb;
     integer file;
     
     // Test parameters
-    localparam CLK_PERIOD = 20;  // 50 MHz clock (20ns period)
-    localparam SAMPLE_RATE = 32000;  // 32 kHz audio sampling
-    localparam SAMPLES_TO_CAPTURE = 128000;  // 4 seconds at 32kHz
+    localparam CLK_PERIOD = 10;
+    localparam SAMPLES_TO_CAPTURE = 200000;  // 4 seconds at 32kHz
     
     // Instantiate the DUT
-    tremolo dut (
+    Effect_Tremolo dut (
         .i_clk(clk),
         .i_rst_n(rst_n),
+        .i_clk_tri(clk),
         .i_valid(valid),
         .i_enable(enable),
         .i_freq(freq),
@@ -44,6 +44,8 @@ module tremolo_tb;
     
     // Main test sequence
     initial begin
+        $fsdbDumpfile("tremolo.fsdb");
+        $fsdbDumpvars("+mda");
         // Initialize signals
         rst_n = 0;
         valid = 0;
@@ -103,7 +105,9 @@ module tremolo_tb;
     
     // Timeout watchdog
     initial begin
-        #(CLK_PERIOD * SAMPLES_TO_CAPTURE * 2);
+        real time_out_delay;
+        time_out_delay = CLK_PERIOD * SAMPLES_TO_CAPTURE * 2.0;
+        #(time_out_delay);
         $display("ERROR: Simulation timeout!");
         $fclose(file);
         $finish;

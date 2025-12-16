@@ -12,9 +12,9 @@ module Effect_Tremolo (
 
     logic [1:0] freq_r, freq_w;
     logic       valid_r;
-    logic signed [15:0] tri_data_w;
+    logic signed [31:0] tri_data_w;
     logic signed [15:0] tremolo_data_r, tremolo_data_w;
-    logic signed [31:0] temp_data_w;
+    logic signed [47:0] temp_data_w;
 
     assign o_data = tremolo_data_r;
     assign o_valid = valid_r;
@@ -29,7 +29,7 @@ module Effect_Tremolo (
 
     always_comb begin
         temp_data_w = tri_data_w * i_data;
-        tremolo_data_w = (temp_data_w) >> 15;
+        tremolo_data_w = (temp_data_w) >> 30;
     end
 
     always @(posedge i_clk or negedge i_rst_n) begin

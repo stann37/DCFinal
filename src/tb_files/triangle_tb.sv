@@ -6,9 +6,9 @@ module tb_Triangle_generator;
     logic rst_n;
     logic start;
     logic stop;
-    logic [1:0] freq;
+    logic [2:0] freq;
     logic [15:0] cnt;
-    logic signed [15:0] tri_data;
+    logic signed [31:0] tri_data;
 
     integer fd; // CSV file handle
 
@@ -17,7 +17,6 @@ module tb_Triangle_generator;
         .i_clk(clk),
         .i_rst_n(rst_n),
         .i_start(start),
-        .i_stop(stop),
         .i_freq(freq),
         .o_tri(tri_data)
     );
@@ -38,8 +37,7 @@ module tb_Triangle_generator;
         clk   = 0;
         rst_n = 0;
         start = 0;
-        stop  = 0;
-        freq  = 2'b11;
+        freq  = 3'b011;
         cnt = 0;
 
         // reset
@@ -49,8 +47,6 @@ module tb_Triangle_generator;
         // start
         #20;
         start = 1;
-        #10;
-        start = 0;
 
         // Run and write waveform to CSV
         repeat (20000) begin
@@ -58,9 +54,7 @@ module tb_Triangle_generator;
             $fwrite(fd, "%0t,%0d\n", $time, tri_data);
         end
 
-        stop = 1;
         @(posedge clk);
-        stop = 0;
 
         $fclose(fd);
         $display("=== Simulation finished ===");
