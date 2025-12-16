@@ -11,13 +11,13 @@ module Triangle_generator (
     localparam S_GEN  = 1;
 
     logic signed [31:0] tri_data_r, tri_data_w;
-    logic [14:0] cnt_r, cnt_w;
+    logic [16:0] cnt_r, cnt_w;
     logic [2:0] freq_r, freq_w;
     logic pos_r, pos_w;
     logic state_r, state_w;
 
     logic [31:0] step_r, step_w;
-    logic [15:0] cnt_max_r, cnt_max_w;
+    logic [16:0] cnt_max_r, cnt_max_w;
 
     assign o_tri = tri_data_r;
 
@@ -113,7 +113,7 @@ module Triangle_generator (
             pos_r <= 0;
             cnt_r <= 0;
             step_r <= 0;
-            cnt_max_r <= 0;
+            cnt_max_r <= 55000;
         end
         else begin
             tri_data_r <= tri_data_w;

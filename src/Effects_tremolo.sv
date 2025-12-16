@@ -29,7 +29,7 @@ module Effect_Tremolo (
 
     always_comb begin
         temp_data_w = tri_data_w * i_data;
-        tremolo_data_w = (temp_data_w) >> 30;
+        tremolo_data_w = (((temp_data_w) >>> 31) > 32767) ? 32767 : ((((temp_data_w) >>> 31) < -32768) ? -32768 : (temp_data_w) >>> 31);
     end
 
     always @(posedge i_clk or negedge i_rst_n) begin
@@ -39,7 +39,7 @@ module Effect_Tremolo (
             valid_r <= 0;
         end
         else begin
-            if (i_valid && i_enable) begin
+            if (i_enable) begin
                 tremolo_data_r <= tremolo_data_w;
             end
             else begin
