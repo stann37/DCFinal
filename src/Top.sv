@@ -70,7 +70,7 @@ logic daclrck_prev;
 wire  sample_valid;
 
 // Detect rising edge of DACLRCK to signify start of new Left Channel sample
-always_ff @(posedge i_clk or negedge i_rst_n) begin
+always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
     if (!i_rst_n) daclrck_prev <= 1'b0;
     else          daclrck_prev <= i_AUD_DACLRCK;
 end
@@ -143,7 +143,7 @@ wire w_comp_valid;
 wire w_eq_valid;
 
 Effect_Gate gate0 (
-    .i_clk      (i_clk),
+    .i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
     .i_valid    (sample_valid),
     .i_enable   (effect_en[EFF_GATE]),
@@ -155,7 +155,7 @@ Effect_Gate gate0 (
 // guitar lever to top, tone 1
 
 Effect_Compressor compressor0 (
-	.i_clk      (i_clk),
+	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
 	.i_valid    (w_gate_valid),
 	.i_enable   (effect_en[EFF_COMP]),
@@ -167,7 +167,7 @@ Effect_Compressor compressor0 (
 // note that compressor may induce makeup gain, be careful when chaining effects
 
 Effect_Distortion distortion0 (
-	.i_clk      (i_clk),
+	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
     .i_valid    (w_comp_valid),
     .i_enable   (effect_en[EFF_DIST]),
@@ -178,7 +178,7 @@ Effect_Distortion distortion0 (
 );
 
 Effect_EQ eq0 (
-	.i_clk      (i_clk),
+	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
 	.i_valid    (w_dist_valid),
 	.i_enable   (effect_en[EFF_EQ_B] || effect_en[EFF_EQ_T]),
@@ -190,7 +190,7 @@ Effect_EQ eq0 (
 );
 
 Effect_Chorus chorus0 (
-	.i_clk      (i_clk),
+	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (),
 	.i_valid    (),
 	.i_enable   (),
@@ -201,7 +201,7 @@ Effect_Chorus chorus0 (
 );
 
 Effect_Tremolo tremolo0 (
-	.i_clk      (i_clk),
+	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),
     .i_valid    (w_eq_valid),
@@ -315,7 +315,7 @@ SevenHexDecoder hex_val_inst (
 );
 
 // Sequential Logic
-always_ff @(posedge i_clk or negedge i_rst_n) begin
+always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 	if (!i_rst_n) begin
 		state_r <= S_I2C; 
 		state_gate_r <= 3'd2;
