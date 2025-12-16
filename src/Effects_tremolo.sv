@@ -22,7 +22,7 @@ module Effect_Tremolo (
     Triangle_generator tri_gen(
         .i_clk(i_clk_tri),
         .i_rst_n(i_rst_n),
-        .i_start(i_enable && i_valid),
+        .i_start(i_enable),
         .i_freq(i_freq),
         .o_tri(tri_data_w)
     );

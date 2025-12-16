@@ -22,6 +22,47 @@ module Triangle_generator (
     assign o_tri = tri_data_r;
 
     always_comb begin
+        case (i_freq)
+            3'd0: begin  // 1 Hz
+                step_w = 42949;
+                cnt_max_w = 50000;
+            end
+            3'd1: begin  // 2 Hz
+                step_w = 85899;
+                cnt_max_w = 25000;
+            end
+            3'd2: begin  // 3 Hz
+                step_w = 128854;
+                cnt_max_w = 16666;
+            end
+            3'd3: begin // 4 Hz
+                step_w = 171798;
+                cnt_max_w = 12500;
+            end
+            3'd4: begin  // 5 Hz
+                step_w = 214748; 
+                cnt_max_w = 10000;
+            end
+            3'd5: begin  // 6 Hz
+                step_w = 257708; 
+                cnt_max_w = 8333;
+            end
+            3'd6: begin  // 7 Hz
+                step_w = 300683; 
+                cnt_max_w = 7143;
+            end
+            3'd7: begin  // 8 Hz
+                step_w = 343597; 
+                cnt_max_w = 6250;
+            end
+            default: begin 
+                step_w = 42949;
+                cnt_max_w = 50000;
+            end
+        endcase
+    end
+
+    always_comb begin
         tri_data_w = tri_data_r;
         freq_w = freq_r;
         state_w = state_r;
@@ -32,46 +73,7 @@ module Triangle_generator (
         case (state_r)
             S_IDLE: begin
                 if (i_start) begin
-                    freq_w = i_freq;
                     state_w = S_GEN;
-                    case (i_freq)
-                        3'd0: begin  // 1 Hz
-                            step_w = 42949;
-                            cnt_max_w = 50000;
-                        end
-                        3'd1: begin  // 2 Hz
-                            step_w = 85899;
-                            cnt_max_w = 25000;
-                        end
-                        3'd2: begin  // 3 Hz
-                            step_w = 128854;
-                            cnt_max_w = 16666;
-                        end
-                        3'd3: begin // 4 Hz
-                            step_w = 171798;
-                            cnt_max_w = 12500;
-                        end
-                        3'd4: begin  // 5 Hz
-                            step_w = 214748; 
-                            cnt_max_w = 10000;
-                        end
-                        3'd5: begin  // 6 Hz
-                            step_w = 257708; 
-                            cnt_max_w = 8333;
-                        end
-                        3'd6: begin  // 7 Hz
-                            step_w = 300683; 
-                            cnt_max_w = 7143;
-                        end
-                        3'd7: begin  // 8 Hz
-                            step_w = 343597; 
-                            cnt_max_w = 6250;
-                        end
-                        default: begin 
-                            step_w = 42949;
-                            cnt_max_w = 50000;
-                        end
-                    endcase
                 end
             end 
             S_GEN: begin
