@@ -144,6 +144,8 @@ wire w_dist_valid;
 wire w_comp_valid;
 wire w_eq_valid;
 
+// stan branch
+
 Effect_Gate gate0 (
     .i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
