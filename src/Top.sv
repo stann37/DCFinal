@@ -67,7 +67,8 @@ wire [2:0] effect_sel = i_sw[17:15];
 wire [7:0] effect_en  = i_sw[7:0];
 
 logic daclrck_prev;
-wire  sample_valid;
+wire sample_valid;
+wire left_channel_start;
 
 // Detect rising edge of DACLRCK to signify start of new Left Channel sample
 always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
@@ -75,7 +76,8 @@ always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
     else          daclrck_prev <= i_AUD_DACLRCK;
 end
 
-assign sample_valid = i_AUD_DACLRCK && ~daclrck_prev;
+assign sample_valid = i_AUD_DACLRCK && ~daclrck_prev; // the first cycle that switches to right channel
+assign left_channel_start = ~i_AUD_DACLRCK && daclrck_prev; // the first cycle that switches to left channel
 
 // I2C
 logic I2C_finish;
