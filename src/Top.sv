@@ -6,7 +6,7 @@ module Top(
     input i_key_2, // Change Mode (Set <-> Play)
     input [17:0] i_sw, // [17:15]=Select Effect, [7:0]=Enable Effect
 
-    // AudDSP and SRAM
+    // AudDSP and SRAM, 
     output [19:0] o_SRAM_ADDR,
     inout  [15:0] io_SRAM_DQ,
     output        o_SRAM_WE_N,
@@ -52,6 +52,76 @@ localparam EFF_TREM   = 3'd6;
 localparam EFF_DEL    = 3'd7;
 
 logic [2:0] state_w, state_r;
+logic [1:0] state_mem_w, state_mem_r; // determines which module is in control of SRAM
+
+localparam MEM_IDLE = 2'd0;
+localparam MEM_CHOR = 2'd1;
+localparam MEM_DEL  = 2'd2;
+localparam MEM_LOOP = 2'd3;
+
+wire [19:0] w_chor_addr;
+wire [15:0] w_chor_wdata;
+wire        w_chor_wen;
+
+logic [15:0] sram_data_out_mux; // Data we WANT to write
+logic sram_oe_mux;       // 1 = Output (Write), 0 = Input (Read)
+
+assign io_SRAM_DQ = (sram_oe_mux) ? sram_data_out_mux : 16'dz;
+
+wire [15:0] sram_read_data = io_SRAM_DQ; // read data when sram_oe_mux = 0
+
+// next state logic and SRAM port control
+// note that the control of SRAM will be handed over one cycle later than the valid signal
+// TODO: initialize SRAM
+always_comb begin
+	state_mem_w = state_mem_r;
+	o_SRAM_ADDR = 20'd0;
+	o_SRAM_WE_N = 1'b1;  // Write Disable
+	sram_oe_mux = 1'b0;         // Tristate (Input mode)
+    sram_data_out_mux = 16'd0;  // Default value (doesn't matter when OE=0)
+
+	case (state_mem_r)
+		MEM_IDLE: begin
+			if (w_eq_valid) state_mem_w = MEM_CHOR;
+		end
+		MEM_CHOR: begin
+            o_SRAM_ADDR = w_chor_addr;
+            o_SRAM_WE_N = w_chor_wen;
+
+			if (w_chor_wen == 1'b0) begin // Write Mode
+                sram_oe_mux = 1'b1;           // Turn ON output driver
+                sram_data_out_mux = w_chor_wdata; // Connect Chorus Data to Pin
+            end
+
+            // ELSE: Read Mode. sram_oe_mux stays 0 (Default).
+            // Chorus will simply read 'sram_read_data' wire.
+
+			if (w_chor_valid) begin
+                state_mem_w = MEM_IDLE; 
+            end
+        end
+		MEM_DEL: begin
+			
+		end
+		MEM_LOOP: begin
+
+		end
+	endcase
+end
+
+always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
+	if (!i_rst_n) begin
+		state_mem_r <= MEM_IDLE;
+	end
+	else begin
+		state_mem_r <= state_mem_w;
+	end
+end
+
+assign o_SRAM_CE_N = 1'b0;  // Chip Enable
+assign o_SRAM_OE_N = 1'b0;  // Output Enable
+assign o_SRAM_LB_N = 1'b0;  // Lower Byte Enable
+assign o_SRAM_UB_N = 1'b0;  // Upper Byte Enable
 
 // Parameters
 logic [2:0] state_gate_r, state_gate_w;
@@ -123,26 +193,20 @@ AudPlayer player0(
     .o_aud_dacdat (o_AUD_DACDAT)
 );
 
-// No SRAM for now ------------------
-assign o_SRAM_ADDR = 20'd0;
-assign io_SRAM_DQ  = 16'dz; // High Impedance
-assign o_SRAM_WE_N = 1'b1;  // Write Disable (Active Low)
-
-assign o_SRAM_CE_N = 1'b0;  // Chip Enable
-assign o_SRAM_OE_N = 1'b0;  // Output Enable
-assign o_SRAM_LB_N = 1'b0;  // Lower Byte Enable
-assign o_SRAM_UB_N = 1'b0;  // Upper Byte Enable
-
 wire signed [15:0] w_gate_out;
 wire signed [15:0] w_trem_out;
 wire signed [15:0] w_dist_out;
 wire signed [15:0] w_comp_out;
 wire signed [15:0] w_eq_out;
+wire signed [15:0] w_chor_out;
+wire signed [15:0] w_delay_out;
 wire w_gate_valid;
 wire w_trem_valid;
 wire w_dist_valid;
 wire w_comp_valid;
 wire w_eq_valid;
+wire w_chor_valid;
+wire w_delay_valid;
 
 // stan branch
 
@@ -195,25 +259,49 @@ Effect_EQ eq0 (
 
 Effect_Chorus chorus0 (
 	.i_clk      (i_AUD_BCLK),
-	.i_rst_n    (),
-	.i_valid    (),
-	.i_enable   (),
-	.i_level    (),
-	.i_data     (),
-	.o_data     (),
-	.o_valid    ()
+	.i_rst_n    (i_rst_n),
+	.i_valid    (w_eq_valid),
+	.i_enable   (effect_en[EFF_CHOR]),
+	.i_level    (state_chor_r),
+	.i_data     (w_eq_out),
+
+	.i_sram_rdata(sram_read_data),
+	.o_sram_addr(w_chor_addr),
+	.o_sram_we_n(w_chor_wen),
+	.o_sram_wdata(w_chor_wdata),
+
+	.o_data     (w_chor_out),
+	.o_valid    (w_chor_valid)
 );
 
 Effect_Tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),
-    .i_valid    (w_eq_valid),
+    .i_valid    (w_chor_valid),
     .i_enable   (effect_en[EFF_TREM]),
     .i_freq     (state_trem_r),
-    .i_data     (w_eq_out),
+    .i_data     (w_chor_out),
     .o_data     (w_trem_out),
 	.o_valid    (w_trem_valid)
+);
+
+
+Effect_Delay delay0 (
+	.i_clk      (i_AUD_BCLK),
+	.i_rst_n    (i_rst_n),
+	.i_valid    (),
+	.i_enable   (effect_en[EFF_DEL]),
+	.i_level    (state_delay_r),
+	.i_data     (),
+
+	.i_sram_rdata(),
+	.o_sram_addr(),
+	.o_sram_we_n(),
+	.o_sram_wdata(),
+
+	.o_data     (w_delay_out),
+	.o_valid    (w_delay_valid)
 );
 
 assign dac_data = w_trem_out; // here
