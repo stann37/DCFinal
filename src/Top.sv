@@ -219,6 +219,7 @@ wire w_comp_valid;
 wire w_eq_valid;
 wire w_delay_valid;
 wire w_loop_valid;
+wire w_loop_record_finish;
 
 // stan branch
 
@@ -303,15 +304,14 @@ Effect_Loop loop0 (
 	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
 	.i_valid    (w_delay_valid),
-	.i_enable   (effect_en[EFF_LOOP]),
 	.i_level    (state_loop_r),
 	.i_data     (w_delay_out),
-	.i_key_1    (i_key_1),
+	.i_state    (state_r),
 	.i_sram_rdata(sram_read_data),
 	.o_sram_addr(w_loop_addr),
 	.o_sram_we_n(w_loop_wen),
 	.o_sram_wdata(w_loop_wdata),
-
+	.o_record_finish(record_finish),
 	.o_data     (w_loop_out), // <--- FINAL OUTPUT
 	.o_valid    (w_loop_valid)
 );
@@ -334,6 +334,7 @@ always_comb begin
 		end
 		S_RECD_LOOP: begin
 			if (i_key_1)      state_w = S_PLAY_LOOP;
+			else if (w_loop_record_finish) state_w = S_PLAY_LOOP;
 		end
 		S_PLAY_LOOP: begin
 			if (i_key_1)      state_w = S_PLAY;
