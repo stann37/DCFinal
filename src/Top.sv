@@ -62,6 +62,10 @@ wire [19:0] w_delay_addr;
 wire [15:0] w_delay_wdata;
 wire        w_delay_wen;
 
+wire [19:0] w_loop_addr;
+wire [15:0] w_loop_wdata;
+wire        w_loop_wen;
+
 logic [15:0] sram_data_out_mux; // Data we WANT to write
 logic sram_oe_mux;       // 1 = Output (Write), 0 = Input (Read)
 
@@ -95,11 +99,23 @@ always_comb begin
             // Delay will simply read 'sram_read_data' wire.
 
 			if (w_delay_valid) begin
-                state_mem_w = MEM_IDLE; 
+                state_mem_w = MEM_LOOP; // Delay hands over to Loop
             end
         end
 		MEM_LOOP: begin
+			o_SRAM_ADDR = w_loop_addr;
+			o_SRAM_WE_N = w_loop_wen;
 
+			if (w_loop_wen == 1'b0) begin // Write Mode
+				sram_oe_mux = 1'b1;          // Turn ON output driver
+				sram_data_out_mux = w_loop_wdata; // Connect Loop Data to Pin
+			end
+
+			// ELSE: Read Mode. sram_oe_mux stays 0 (Default).
+			// Loop will simply read 'sram_read_data' wire.
+			if (w_loop_valid) begin
+				state_mem_w = MEM_IDLE; // Loop hands over to Idle
+			end
 		end
 		default:
 	endcase
@@ -195,12 +211,14 @@ wire signed [15:0] w_dist_out;
 wire signed [15:0] w_comp_out;
 wire signed [15:0] w_eq_out;
 wire signed [15:0] w_delay_out;
+wire signed [15:0] w_loop_out;
 wire w_gate_valid;
 wire w_trem_valid;
 wire w_dist_valid;
 wire w_comp_valid;
 wire w_eq_valid;
 wire w_delay_valid;
+wire w_loop_valid;
 
 // stan branch
 
@@ -281,7 +299,24 @@ Effect_Delay delay0 (
 	.o_valid    (w_delay_valid)
 );
 
-assign dac_data = w_delay_out; // here
+Effect_Loop loop0 (
+	.i_clk      (i_AUD_BCLK),
+	.i_rst_n    (i_rst_n),
+	.i_valid    (w_delay_valid),
+	.i_enable   (effect_en[EFF_LOOP]),
+	.i_level    (state_loop_r),
+	.i_data     (w_delay_out),
+	.i_key_1    (i_key_1),
+	.i_sram_rdata(sram_read_data),
+	.o_sram_addr(w_loop_addr),
+	.o_sram_we_n(w_loop_wen),
+	.o_sram_wdata(w_loop_wdata),
+
+	.o_data     (w_loop_out), // <--- FINAL OUTPUT
+	.o_valid    (w_loop_valid)
+);
+
+assign dac_data = w_loop_out; // here
 
 // FSM State Transition
 always_comb begin
