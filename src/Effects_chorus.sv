@@ -87,7 +87,7 @@ module Effect_Chorus (
                     end else begin
                         o_data <= captured_input;
                     end
-                    o_valid <= 1; // Signal Top.sv we are done
+                    o_valid <= 1;
                     state <= S_IDLE;
                 end
             endcase
