@@ -17,15 +17,14 @@ module Effect_Compressor (
 
     always_comb begin
         case (i_level)
-            3'd0: begin threshold = 16'd28000;              makeup_shift = 4'd0; end // ~1.0x
-            3'd1: begin threshold = 16'd24000;              makeup_shift = 4'd0; end // ~1.0x
-            3'd2: begin threshold = 16'd20000;              makeup_shift = 4'd0; end // ~1.0x
-            3'd3: begin threshold = 16'd16000;              makeup_shift = 4'd0; end // ~
-            3'd4: begin threshold = 16'd12000;              makeup_shift = 4'd1; end // ~
-            3'd5: begin threshold = 16'd8000;               makeup_shift = 4'd1; end // ~
-            3'd6: begin threshold = 16'd4000;               makeup_shift = 4'd1; end // ~
-            3'd7: begin threshold = 16'd2000;               makeup_shift = 4'd2; end // ~
-            default: begin threshold = 16'd28000;           makeup_shift = 4'd0; end
+            3'd0: begin threshold = 16'd30000;              makeup_shift = 4'd0; end
+            3'd1: begin threshold = 16'd27000;              makeup_shift = 4'd0; end
+            3'd2: begin threshold = 16'd24000;              makeup_shift = 4'd0; end
+            3'd3: begin threshold = 16'd21000;              makeup_shift = 4'd0; end
+            3'd4: begin threshold = 16'd18000;              makeup_shift = 4'd0; end
+            3'd5: begin threshold = 16'd15000;               makeup_shift = 4'd0; end
+            3'd6: begin threshold = 16'd12000;               makeup_shift = 4'd1; end // ~2.0x
+            3'd7: begin threshold = 16'd9000;               makeup_shift = 4'd1; end // ~2.0x
         endcase
     end
 
