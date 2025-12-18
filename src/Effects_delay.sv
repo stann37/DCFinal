@@ -22,6 +22,21 @@ module Effect_Delay (
     logic [19:0] write_ptr;
     logic [19:0] read_ptr;
 
+    logic [19:0] delay_samples_var;
+
+    always_comb begin
+        case (i_level)
+            3'd0: delay_samples_var = 20'd4000;
+            3'd1: delay_samples_var = 20'd8000;
+            3'd2: delay_samples_var = 20'd12000;
+            3'd3: delay_samples_var = 20'd16000;
+            3'd4: delay_samples_var = 20'd20000;
+            3'd5: delay_samples_var = 20'd24000;
+            3'd6: delay_samples_var = 20'd28000;
+            3'd7: delay_samples_var = 20'd31999;
+        endcase
+    end
+
     localparam MAX_BUFFER  = 20'd32000; 
     localparam DELAY_SAMPLES = 20'd9000;
 
@@ -38,6 +53,7 @@ module Effect_Delay (
         end
     end
 
+    // TODO: switch to variable delay after debugging
     assign read_ptr = (write_ptr >= DELAY_SAMPLES) ? (write_ptr - DELAY_SAMPLES) : (MAX_BUFFER + write_ptr - DELAY_SAMPLES);
 
     localparam [2:0] S_IDLE = 3'd0;
@@ -82,8 +98,8 @@ module Effect_Delay (
                 end
                 S_MIX: begin
                     if (i_enable) begin
-                        // (Input + Delayed) / 2 to prevent clipping
                         o_data <= (captured_input >>> 1) + (delayed_sample >>> 1);
+                        // TODO: error here
                     end else begin
                         o_data <= captured_input;
                     end

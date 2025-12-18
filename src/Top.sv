@@ -80,7 +80,7 @@ always_comb begin
 
 	case (state_mem_r)
 		MEM_IDLE: begin
-			if (w_trem_valid) state_mem_w = MEM_DEL;
+			if (w_trem_valid) state_mem_w = MEM_DEL; // Tremolo hands over to Delay
 		end
 		MEM_DEL: begin
             o_SRAM_ADDR = w_delay_addr;
