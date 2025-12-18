@@ -47,32 +47,30 @@ localparam EFF_COMP   = 3'd1;
 localparam EFF_DIST   = 3'd2;
 localparam EFF_EQ_B   = 3'd3;
 localparam EFF_EQ_T   = 3'd4;
-localparam EFF_CHOR   = 3'd5;
-localparam EFF_TREM   = 3'd6;
-localparam EFF_DEL    = 3'd7;
+localparam EFF_TREM   = 3'd5;
+localparam EFF_DEL    = 3'd6;
+localparam EFF_LOOP   = 3'd7;
 
 logic [2:0] state_w, state_r;
 logic [1:0] state_mem_w, state_mem_r; // determines which module is in control of SRAM
 
 localparam MEM_IDLE = 2'd0;
-localparam MEM_CHOR = 2'd1;
-localparam MEM_DEL  = 2'd2;
-localparam MEM_LOOP = 2'd3;
+localparam MEM_DEL  = 2'd1;
+localparam MEM_LOOP = 2'd2;
 
-wire [19:0] w_chor_addr;
-wire [15:0] w_chor_wdata;
-wire        w_chor_wen;
+wire [19:0] w_delay_addr;
+wire [15:0] w_delay_wdata;
+wire        w_delay_wen;
 
 logic [15:0] sram_data_out_mux; // Data we WANT to write
 logic sram_oe_mux;       // 1 = Output (Write), 0 = Input (Read)
 
 assign io_SRAM_DQ = (sram_oe_mux) ? sram_data_out_mux : 16'dz;
 
-wire [15:0] sram_read_data = io_SRAM_DQ; // read data when sram_oe_mux = 0
+wire signed [15:0] sram_read_data = io_SRAM_DQ; // read data when sram_oe_mux = 0
 
 // next state logic and SRAM port control
 // note that the control of SRAM will be handed over one cycle later than the valid signal
-// TODO: initialize SRAM
 always_comb begin
 	state_mem_w = state_mem_r;
 	o_SRAM_ADDR = 20'd0;
@@ -82,30 +80,28 @@ always_comb begin
 
 	case (state_mem_r)
 		MEM_IDLE: begin
-			if (w_eq_valid) state_mem_w = MEM_CHOR;
+			if (w_trem_valid) state_mem_w = MEM_DEL;
 		end
-		MEM_CHOR: begin
-            o_SRAM_ADDR = w_chor_addr;
-            o_SRAM_WE_N = w_chor_wen;
+		MEM_DEL: begin
+            o_SRAM_ADDR = w_delay_addr;
+            o_SRAM_WE_N = w_delay_wen;
 
-			if (w_chor_wen == 1'b0) begin // Write Mode
+			if (w_delay_wen == 1'b0) begin // Write Mode
                 sram_oe_mux = 1'b1;           // Turn ON output driver
-                sram_data_out_mux = w_chor_wdata; // Connect Chorus Data to Pin
+                sram_data_out_mux = w_delay_wdata; // Connect Delay Data to Pin
             end
 
             // ELSE: Read Mode. sram_oe_mux stays 0 (Default).
-            // Chorus will simply read 'sram_read_data' wire.
+            // Delay will simply read 'sram_read_data' wire.
 
-			if (w_chor_valid) begin
+			if (w_delay_valid) begin
                 state_mem_w = MEM_IDLE; 
             end
         end
-		MEM_DEL: begin
-			
-		end
 		MEM_LOOP: begin
 
 		end
+		default:
 	endcase
 end
 
@@ -130,8 +126,8 @@ logic [2:0] state_dist_r, state_dist_w;
 logic [2:0] state_EQb_r, state_EQb_w;
 logic [2:0] state_EQt_r, state_EQt_w;
 logic [2:0] state_trem_r, state_trem_w;
-logic [2:0] state_chor_r, state_chor_w;
 logic [2:0] state_delay_r, state_delay_w;
+logic [2:0] state_loop_r, state_loop_w;
 
 wire [2:0] effect_sel = i_sw[17:15];
 wire [7:0] effect_en  = i_sw[7:0];
@@ -198,14 +194,12 @@ wire signed [15:0] w_trem_out;
 wire signed [15:0] w_dist_out;
 wire signed [15:0] w_comp_out;
 wire signed [15:0] w_eq_out;
-wire signed [15:0] w_chor_out;
 wire signed [15:0] w_delay_out;
 wire w_gate_valid;
 wire w_trem_valid;
 wire w_dist_valid;
 wire w_comp_valid;
 wire w_eq_valid;
-wire w_chor_valid;
 wire w_delay_valid;
 
 // stan branch
@@ -257,31 +251,14 @@ Effect_EQ eq0 (
 	.o_valid    (w_eq_valid)
 );
 
-Effect_Chorus chorus0 (
-	.i_clk      (i_AUD_BCLK),
-	.i_rst_n    (i_rst_n),
-	.i_valid    (w_eq_valid),
-	.i_enable   (effect_en[EFF_CHOR]),
-	.i_level    (state_chor_r),
-	.i_data     (w_eq_out),
-
-	.i_sram_rdata(sram_read_data),
-	.o_sram_addr(w_chor_addr),
-	.o_sram_we_n(w_chor_wen),
-	.o_sram_wdata(w_chor_wdata),
-
-	.o_data     (w_chor_out),
-	.o_valid    (w_chor_valid)
-);
-
 Effect_Tremolo tremolo0 (
 	.i_clk      (i_AUD_BCLK),
     .i_rst_n    (i_rst_n),
 	.i_clk_tri  (i_clk_100k),
-    .i_valid    (w_chor_valid),
+    .i_valid    (w_eq_valid),
     .i_enable   (effect_en[EFF_TREM]),
     .i_freq     (state_trem_r),
-    .i_data     (w_chor_out),
+    .i_data     (w_eq_out),
     .o_data     (w_trem_out),
 	.o_valid    (w_trem_valid)
 );
@@ -290,21 +267,21 @@ Effect_Tremolo tremolo0 (
 Effect_Delay delay0 (
 	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
-	.i_valid    (),
+	.i_valid    (w_trem_valid),
 	.i_enable   (effect_en[EFF_DEL]),
 	.i_level    (state_delay_r),
-	.i_data     (),
+	.i_data     (w_trem_out),
 
-	.i_sram_rdata(),
-	.o_sram_addr(),
-	.o_sram_we_n(),
-	.o_sram_wdata(),
+	.i_sram_rdata(sram_read_data),
+	.o_sram_addr(w_delay_addr),
+	.o_sram_we_n(w_delay_wen),
+	.o_sram_wdata(w_delay_wdata),
 
 	.o_data     (w_delay_out),
 	.o_valid    (w_delay_valid)
 );
 
-assign dac_data = w_trem_out; // here
+assign dac_data = w_delay_out; // here
 
 // FSM State Transition
 always_comb begin
@@ -338,7 +315,7 @@ always_comb begin
 	state_EQb_w  = state_EQb_r;
 	state_EQt_w  = state_EQt_r;
 	state_trem_w = state_trem_r;
-	state_chor_w = state_chor_r;
+	state_loop_w = state_loop_r;
 	state_delay_w = state_delay_r;
 
 	if (state_r == S_SET) begin
@@ -350,7 +327,7 @@ always_comb begin
 				EFF_EQ_B: state_EQb_w   = state_EQb_r + 1;
 				EFF_EQ_T: state_EQt_w   = state_EQt_r + 1;
 				EFF_TREM: state_trem_w  = state_trem_r + 1;
-				EFF_CHOR: state_chor_w  = state_chor_r + 1;
+				EFF_LOOP: state_loop_w  = state_loop_r + 1;
 				EFF_DEL:  state_delay_w = state_delay_r + 1;
 			endcase
 		end
@@ -391,7 +368,7 @@ always_comb begin
 			EFF_EQ_B: current_val = state_EQb_r;
 			EFF_EQ_T: current_val = state_EQt_r;
 			EFF_TREM: current_val = state_trem_r;
-			EFF_CHOR: current_val = state_chor_r;
+			EFF_LOOP: current_val = state_loop_r;
 			EFF_DEL:  current_val = state_delay_r;
 			default:  current_val = 3'd0;
 		endcase
@@ -416,7 +393,7 @@ always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 		state_EQb_r  <= 3'd4;
 		state_EQt_r  <= 3'd4;
 		state_trem_r <= 0;
-		state_chor_r <= 0;
+		state_loop_r <= 0;
 		state_delay_r <= 0;
 	end
 	else begin
@@ -427,7 +404,7 @@ always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 		state_EQb_r  <= state_EQb_w; 
 		state_EQt_r  <= state_EQt_w; 
 		state_trem_r <= state_trem_w;
-		state_chor_r <= state_chor_w;
+		state_loop_r <= state_loop_w;
 		state_delay_r <= state_delay_w;
 	end
 end
