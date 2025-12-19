@@ -9,9 +9,9 @@ module Effect_Delay (
     input  signed [15:0] i_sram_rdata, // Data read FROM SRAM
     output logic  [19:0] o_sram_addr,  // Address request
     output logic         o_sram_we_n,  // 0=Write, 1=Read
-    output signed [15:0] o_sram_wdata, // Data to write
+    output logic signed [15:0] o_sram_wdata, // Data to write
 
-    output signed [15:0] o_data,
+    output logic signed [15:0] o_data,
     output logic         o_valid
 );
     // we need 1s of delay buffer: 32000 samples
@@ -54,7 +54,7 @@ module Effect_Delay (
     end
 
     // TODO: switch to variable delay after debugging
-    assign read_ptr = (write_ptr >= DELAY_SAMPLES) ? (write_ptr - DELAY_SAMPLES) : (MAX_BUFFER + write_ptr - DELAY_SAMPLES);
+    assign read_ptr = (write_ptr >= delay_samples_var) ? (write_ptr - delay_samples_var) : (MAX_BUFFER + write_ptr - delay_samples_var);
 
     localparam [2:0] S_IDLE = 3'd0;
     localparam [2:0] S_WRITE = 3'd1;
@@ -66,6 +66,11 @@ module Effect_Delay (
 
     logic signed [15:0] captured_input; // Store input stable
     logic signed [15:0] delayed_sample; // Store SRAM data
+    logic signed [16:0] scaled_input, scaled_sample;
+    logic signed [15:0] delayed_data;
+    assign scaled_input = captured_input;
+    assign scaled_sample = delayed_sample;
+    assign delayed_data = (scaled_input + scaled_sample) >>> 1;
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
@@ -98,7 +103,7 @@ module Effect_Delay (
                 end
                 S_MIX: begin
                     if (i_enable) begin
-                        o_data <= (captured_input >>> 1) + (delayed_sample >>> 1);
+                        o_data <= delayed_data;
                         // TODO: error here
                     end else begin
                         o_data <= captured_input;
