@@ -117,7 +117,7 @@ always_comb begin
 				state_mem_w = MEM_IDLE; // Loop hands over to Idle
 			end
 		end
-		default:
+		default: begin end
 	endcase
 end
 
