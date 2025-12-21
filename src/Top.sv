@@ -215,21 +215,21 @@ AudPlayer player0(
     .o_aud_dacdat (o_AUD_DACDAT)
 );
 
-VGA_Display vga0 (
-	.i_clk_25mhz  (clk_25mhz_w),
-	.i_rst_n      (i_rst_n),
-	.i_audio_clk  (i_AUD_BCLK),
-	.i_sample_valid(sample_valid),
-	.i_audio_data (adc_data),
-	.o_VGA_R(o_VGA_R),
-	.o_VGA_G(o_VGA_G),
-	.o_VGA_B(o_VGA_B),
-	.o_VGA_HS(o_VGA_HS),
-	.o_VGA_VS(o_VGA_VS),
-	.o_VGA_BLANK_N(o_VGA_BLANK_N),
-	.o_VGA_SYNC_N(o_VGA_SYNC_N),
-	.o_VGA_CLK(o_VGA_CLK)
-);
+// VGA_Display vga0 (
+// 	.i_clk_25mhz  (clk_25mhz_w),
+// 	.i_rst_n      (i_rst_n),
+// 	.i_audio_clk  (i_AUD_BCLK),
+// 	.i_sample_valid(sample_valid),
+// 	.i_audio_data (adc_data),
+// 	.o_VGA_R(o_VGA_R),
+// 	.o_VGA_G(o_VGA_G),
+// 	.o_VGA_B(o_VGA_B),
+// 	.o_VGA_HS(o_VGA_HS),
+// 	.o_VGA_VS(o_VGA_VS),
+// 	.o_VGA_BLANK_N(o_VGA_BLANK_N),
+// 	.o_VGA_SYNC_N(o_VGA_SYNC_N),
+// 	.o_VGA_CLK(o_VGA_CLK)
+// );
 
 // 25 MHz clock generation from i_clk
 logic [1:0] clk_25mhz_r;
@@ -239,6 +239,28 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
 	if (!i_rst_n) clk_25mhz_r <= 1'b0;
 	else          clk_25mhz_r <= ~clk_25mhz_r;
 end
+
+logic [9:0] h, v;
+
+always_ff @(posedge clk_25mhz or negedge i_rst_n) begin
+    if (!i_rst_n) begin
+        h <= 0; v <= 0;
+    end else begin
+        if (h >= 799) begin h <= 0; v <= (v >= 524) ? 0 : v + 1; end
+        else h <= h + 1;
+    end
+end
+
+assign o_VGA_HS = ~((h >= 656) && (h < 752));
+assign o_VGA_VS = ~((v >= 490) && (v < 492));
+assign o_VGA_BLANK_N = (h < 640) && (v < 480);
+assign o_VGA_SYNC_N = 1'b0;
+assign o_VGA_CLK = clk_25mhz;
+
+// RED screen
+assign o_VGA_R = VGA_BLANK_N ? 8'd255 : 8'd0;
+assign o_VGA_G = 8'd0;
+assign o_VGA_B = 8'd0;
 
 wire signed [15:0] w_gate_out;
 wire signed [15:0] w_trem_out;
@@ -418,7 +440,7 @@ always_comb begin
 	endcase
 
 	// Red: Effects
-	o_ledr[15:8] = 10'b0; 
+	o_ledr[17:8] = 10'b0; 
 	if (state_r == S_SET) begin
 		// In SET mode: Show a single cursor LED indicating which effect is selected
 		o_ledr[7:0] = (8'b1 << effect_sel);
