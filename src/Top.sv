@@ -35,11 +35,13 @@ module Top(
     output [6:0] o_hex0         // Parameter Value
 );
 
-localparam S_I2C       = 3'd0;
-localparam S_PLAY      = 3'd1;
-localparam S_SET       = 3'd2;
-localparam S_RECD_LOOP = 3'd3;
-localparam S_PLAY_LOOP = 3'd4;
+localparam S_I2C        = 3'd0;
+localparam S_PLAY       = 3'd1;
+localparam S_SET        = 3'd2;
+localparam S_RECD_LOOP0  = 3'd3;
+localparam S_PLAY_LOOP0  = 3'd4;
+localparam S_RECD_LOOP1 = 3'd5;
+localparam S_PLAY_LOOP1 = 3'd6;
 
 // Effect mapping
 localparam EFF_GATE   = 3'd0;
@@ -51,20 +53,30 @@ localparam EFF_TREM   = 3'd5;
 localparam EFF_DEL    = 3'd6;
 localparam EFF_LOOP   = 3'd7;
 
+// loop state
+localparam LOOP_UNENABLED = 2'd0;
+localparam LOOP_RECORD = 2'd1; 
+localparam LOOP_PLAY = 2'd2;
+
 logic [2:0] state_w, state_r;
 logic [1:0] state_mem_w, state_mem_r; // determines which module is in control of SRAM
 
 localparam MEM_IDLE = 2'd0;
 localparam MEM_DEL  = 2'd1;
-localparam MEM_LOOP = 2'd2;
+localparam MEM_LOOP0 = 2'd2;
+localparam MEM_LOOP1 = 2'd3;
 
 wire [19:0] w_delay_addr;
 wire [15:0] w_delay_wdata;
 wire        w_delay_wen;
 
-wire [19:0] w_loop_addr;
-wire [15:0] w_loop_wdata;
-wire        w_loop_wen;
+wire [19:0] w_loop0_addr;
+wire [15:0] w_loop0_wdata;
+wire        w_loop0_wen;
+
+wire [19:0] w_loop1_addr;
+wire [15:0] w_loop1_wdata;
+wire        w_loop1_wen;
 
 logic [15:0] sram_data_out_mux; // Data we WANT to write
 logic sram_oe_mux;       // 1 = Output (Write), 0 = Input (Read)
@@ -99,21 +111,36 @@ always_comb begin
             // Delay will simply read 'sram_read_data' wire.
 
 			if (w_delay_valid) begin
-                state_mem_w = MEM_LOOP; // Delay hands over to Loop
+                state_mem_w = MEM_LOOP0; // Delay hands over to Loop
             end
         end
-		MEM_LOOP: begin
-			o_SRAM_ADDR = w_loop_addr;
-			o_SRAM_WE_N = w_loop_wen;
+		MEM_LOOP0: begin
+			o_SRAM_ADDR = w_loop0_addr;
+			o_SRAM_WE_N = w_loop0_wen;
 
-			if (w_loop_wen == 1'b0) begin // Write Mode
+			if (w_loop0_wen == 1'b0) begin // Write Mode
 				sram_oe_mux = 1'b1;          // Turn ON output driver
-				sram_data_out_mux = w_loop_wdata; // Connect Loop Data to Pin
+				sram_data_out_mux = w_loop0_wdata; // Connect Loop Data to Pin
 			end
 
 			// ELSE: Read Mode. sram_oe_mux stays 0 (Default).
 			// Loop will simply read 'sram_read_data' wire.
-			if (w_loop_valid) begin
+			if (w_loop0_valid) begin
+				state_mem_w = MEM_LOOP1; // Loop hands over to Idle
+			end
+		end
+		MEM_LOOP1: begin
+			o_SRAM_ADDR = w_loop1_addr;
+			o_SRAM_WE_N = w_loop1_wen;
+
+			if (w_loop1_wen == 1'b0) begin // Write Mode
+				sram_oe_mux = 1'b1;          // Turn ON output driver
+				sram_data_out_mux = w_loop1_wdata; // Connect Loop Data to Pin
+			end
+
+			// ELSE: Read Mode. sram_oe_mux stays 0 (Default).
+			// Loop will simply read 'sram_read_data' wire.
+			if (w_loop1_valid) begin
 				state_mem_w = MEM_IDLE; // Loop hands over to Idle
 			end
 		end
@@ -211,15 +238,41 @@ wire signed [15:0] w_dist_out;
 wire signed [15:0] w_comp_out;
 wire signed [15:0] w_eq_out;
 wire signed [15:0] w_delay_out;
-wire signed [15:0] w_loop_out;
+wire signed [15:0] w_loop0_out;
+wire signed [15:0] w_loop1_out;
 wire w_gate_valid;
 wire w_trem_valid;
 wire w_dist_valid;
 wire w_comp_valid;
 wire w_eq_valid;
 wire w_delay_valid;
-wire w_loop_valid;
-wire w_loop_record_finish;
+wire w_loop0_valid;
+wire w_loop1_valid;
+wire w_loop0_record_finish;
+wire w_loop1_record_finish;
+
+// loop state control
+logic [1:0] loop0_state, loop1_state;
+always_comb begin
+	loop0_state = LOOP_UNENABLED;
+	loop1_state = LOOP_UNENABLED;
+	case (state_r)
+		S_RECD_LOOP0: begin
+			loop0_state = LOOP_RECORD;
+		end
+		S_PLAY_LOOP0: begin
+			loop0_state = LOOP_PLAY;
+		end
+		S_RECD_LOOP1: begin
+			loop0_state = LOOP_PLAY;
+			loop1_state = LOOP_RECORD;
+		end
+		S_PLAY_LOOP1: begin
+			loop0_state = LOOP_PLAY;
+			loop1_state = LOOP_PLAY;
+		end
+	endcase
+end
 
 // stan branch
 
@@ -300,23 +353,39 @@ Effect_Delay delay0 (
 	.o_valid    (w_delay_valid)
 );
 
-Effect_Loop loop0 (
+Effect_Loop0 loop0 (
 	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
 	.i_valid    (w_delay_valid),
 	.i_level    (state_loop_r),
 	.i_data     (w_delay_out),
-	.i_state    (state_r),
+	.i_state    (loop0_state),
 	.i_sram_rdata(sram_read_data),
-	.o_sram_addr(w_loop_addr),
-	.o_sram_we_n(w_loop_wen),
-	.o_sram_wdata(w_loop_wdata),
-	.o_record_finish(record_finish),
-	.o_data     (w_loop_out), // <--- FINAL OUTPUT
-	.o_valid    (w_loop_valid)
+	.o_sram_addr(w_loop0_addr),
+	.o_sram_we_n(w_loop0_wen),
+	.o_sram_wdata(w_loop0_wdata),
+	.o_record_finish(w_loop0_record_finish),
+	.o_data     (w_loop0_out),
+	.o_valid    (w_loop0_valid)
 );
 
-assign dac_data = w_loop_out; // here
+Effect_Loop1 loop1 (
+	.i_clk      (i_AUD_BCLK),
+	.i_rst_n    (i_rst_n),
+	.i_valid    (w_delay_valid),
+	.i_level    (state_loop_r),
+	.i_data     (w_loop0_out),
+	.i_state    (loop1_state),
+	.i_sram_rdata(sram_read_data),
+	.o_sram_addr(w_loop1_addr),
+	.o_sram_we_n(w_loop1_wen),
+	.o_sram_wdata(w_loop1_wdata),
+	.o_record_finish(w_loop1_record_finish),
+	.o_data     (w_loop1_out), // <--- FINAL OUTPUT
+	.o_valid    (w_loop1_valid)
+);
+
+assign dac_data = w_loop1_out; // here
 
 // FSM State Transition
 always_comb begin
@@ -327,17 +396,26 @@ always_comb begin
 		end
 		S_PLAY: begin
 			if (i_key_2)      state_w = S_SET;
-			else if (i_key_1) state_w = S_RECD_LOOP;
+			else if (i_key_1) state_w = S_RECD_LOOP0;
 		end
 		S_SET: begin
 			if (i_key_2)      state_w = S_PLAY;
 		end
-		S_RECD_LOOP: begin
-			if (i_key_1)      state_w = S_PLAY_LOOP;
-			else if (w_loop_record_finish) state_w = S_PLAY_LOOP;
+		S_RECD_LOOP0: begin
+			if (i_key_1)      state_w = S_PLAY_LOOP0;
+			else if (w_loop_record_finish) state_w = S_PLAY_LOOP0;
 		end
-		S_PLAY_LOOP: begin
-			if (i_key_1)      state_w = S_PLAY;
+		S_PLAY_LOOP0: begin
+			if (i_key_2)      state_w = S_PLAY;
+			else if (i_key_1) state_w = S_RECD_LOOP1;
+		end
+		S_RECD_LOOP1: begin
+			if (i_key_1)      state_w = S_PLAY_LOOP1;
+			else if (w_loop_record_finish) state_w = S_PLAY_LOOP1;
+		end
+		S_PLAY_LOOP1: begin
+			if (i_key_2)      state_w = S_PLAY_LOOP0;
+			else if (i_key_1) state_w = S_RECD_LOOP1;
 		end
 	endcase
 end
@@ -374,12 +452,14 @@ end
 always_comb begin
 	// Green: FSM State
 	case(state_r)
-		S_I2C:       o_ledg = 9'b1_0000_0000;
-		S_PLAY:      o_ledg = 9'b0_0000_0001;
-		S_SET:       o_ledg = 9'b0_0000_0010;
-		S_RECD_LOOP: o_ledg = 9'b0_0000_0100;
-		S_PLAY_LOOP: o_ledg = 9'b0_0000_1000;
-		default:     o_ledg = 9'b0_0000_0000;
+		S_I2C:        o_ledg = 9'b1_0000_0000;
+		S_PLAY:       o_ledg = 9'b0_0000_0001;
+		S_SET:        o_ledg = 9'b0_0000_0010;
+		S_RECD_LOOP0: o_ledg = 9'b0_0000_0100;
+		S_PLAY_LOOP0: o_ledg = 9'b0_0000_1000;
+		S_RECD_LOOP1: o_ledg = 9'b0_0001_0000;
+		S_PLAY_LOOP1: o_ledg = 9'b0_0010_0000;
+		default:      o_ledg = 9'b0_0000_0000;
 	endcase
 
 	// Red: Effects

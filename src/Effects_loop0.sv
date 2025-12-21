@@ -5,7 +5,7 @@ module Effect_Loop (
     // input i_enable,
     input  signed [2:0]        i_level,
     input  signed [15:0]       i_data,
-    input  [2:0]               i_state, 
+    input  [1:0]               i_state, // 0: unenabled, 1: record 2: play 
     input  [15:0]              i_sram_rdata,
     output logic [19:0]        o_sram_addr,
     output logic               o_sram_we_n,
@@ -16,13 +16,16 @@ module Effect_Loop (
     output logic               o_valid
 );
 
-    localparam PERIOD_MAX = 640000; // 20 sec
+    localparam PERIOD_MAX = 320000; // 10 sec
     localparam START_ADDR = 32000;
-    localparam MAX_ADDR = 671999;
+    localparam MAX_ADDR = 351999;
 
     // FSM state in Top
-    localparam TOP_RECD_LOOP = 3'd3;
-    localparam TOP_PLAY_LOOP = 3'd4;
+    // localparam TOP_RECD_LOOP = 3'd3;
+    // localparam TOP_PLAY_LOOP = 3'd4;
+    localparam UNENABLED = 2'd0;
+    localparam RECORD = 2'd1; 
+    localparam PLAY = 2'd2;
 
     // FSM
     localparam S_IDLE = 3'd0;
@@ -68,7 +71,7 @@ module Effect_Loop (
     assign looped_data = (scaled_input + scaled_sample) >>> 3;
 
     // output
-    assign output_data_w = (i_state == TOP_PLAY_LOOP) ? looped_data : captured_input_r;
+    assign output_data_w = (i_state == PLAY) ? looped_data : captured_input_r;
     assign o_data = output_data_r;
     assign valid_w = (state_r == S_MIX) ? 1 : 0;
     assign o_valid = valid_r;
@@ -81,7 +84,7 @@ module Effect_Loop (
         raddr_w = raddr_r;
         finish_w = 0;
         case (i_state)
-            TOP_RECD_LOOP: begin
+            RECORD: begin
                 if (i_valid) begin 
                     period_w = (period_r < MAX_ADDR) ? period_r + 1 : MAX_ADDR;
                     waddr_w = (waddr_r < MAX_ADDR) ? waddr_r + 1 : MAX_ADDR;
@@ -92,7 +95,7 @@ module Effect_Loop (
                 end
                 if (period_r >= MAX_ADDR) finish_w = 1;
             end 
-            TOP_PLAY_LOOP: begin
+            PLAY: begin
                 period_w = period_r;
                 if (i_valid) begin
                     raddr_w = (raddr_r < period_r - 1) ? raddr_r + 1 : START_ADDR;
@@ -151,7 +154,7 @@ module Effect_Loop (
         case (state_r)
             S_WRITE: begin
                 o_sram_addr  = waddr_r;
-                if (i_state == TOP_RECD_LOOP) begin
+                if (i_state == RECORD) begin
                     o_sram_wdata = captured_input_r;
                     o_sram_we_n  = 1'b0;
                 end
