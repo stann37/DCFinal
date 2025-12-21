@@ -228,7 +228,9 @@ VGA_Display vga0 (
 	.o_VGA_VS(o_VGA_VS),
 	.o_VGA_BLANK_N(o_VGA_BLANK_N),
 	.o_VGA_SYNC_N(o_VGA_SYNC_N),
-	.o_VGA_CLK(o_VGA_CLK)
+	.o_VGA_CLK(o_VGA_CLK),
+	.o_hs_debug(o_ledr[17]),
+	.o_vs_debug(o_ledr[16])
 );
 
 // 25 MHz clock generation from i_clk
@@ -418,7 +420,7 @@ always_comb begin
 	endcase
 
 	// Red: Effects
-	o_ledr[17:8] = 10'b0; 
+	o_ledr[15:8] = 10'b0; 
 	if (state_r == S_SET) begin
 		// In SET mode: Show a single cursor LED indicating which effect is selected
 		o_ledr[7:0] = (8'b1 << effect_sel);

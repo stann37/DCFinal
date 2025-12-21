@@ -12,7 +12,9 @@ module VGA_Display (
     output logic        o_VGA_VS,
     output logic        o_VGA_BLANK_N,
     output logic        o_VGA_SYNC_N,
-    output logic        o_VGA_CLK
+    output logic        o_VGA_CLK,
+    output logic        o_hs_debug,
+    output logic        o_vs_debug
 );
 
     // VGA 640x480 @ 60Hz timing parameters
@@ -76,6 +78,9 @@ module VGA_Display (
             v_count_w = v_count_r;
         end
     end
+
+    assign o_hs_debug = h_count_r[9];
+    assign o_vs_debug = v_count_r[9];
     
     // Sync pulses (negative polarity for VGA standard)
     assign hsync = (h_count_r >= (H_DISPLAY + H_FRONT)) && 
