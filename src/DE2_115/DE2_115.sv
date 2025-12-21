@@ -216,7 +216,17 @@ Top top0( // refer to Lab3 for more details
 	.o_ledg(LEDG), // [8:0]
 	.o_ledr(LEDR), // [17:0]
 
-	.o_hex0(HEX0) // [6:0]
+	.o_hex0(HEX0), // [6:0]
+
+	// VGA
+	.o_VGA_R(VGA_R),
+	.o_VGA_G(VGA_G),
+	.o_VGA_B(VGA_B),
+	.o_VGA_HS(VGA_HS),
+	.o_VGA_VS(VGA_VS),
+	.o_VGA_BLANK_N(VGA_BLANK_N),
+	.o_VGA_SYNC_N(VGA_SYNC_N),
+	.o_VGA_CLK(VGA_CLK)
 );
 
 

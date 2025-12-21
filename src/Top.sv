@@ -32,7 +32,17 @@ module Top(
     output logic [17:0] o_ledr, // Effect Indicator
 
     // Display
-    output [6:0] o_hex0         // Parameter Value
+    output [6:0] o_hex0,         // Parameter Value
+
+	// VGA Display
+	output [6:0] o_VGA_R,
+	output [6:0] o_VGA_G,
+	output [6:0] o_VGA_B,
+	output       o_VGA_HS,
+	output       o_VGA_VS,
+	output       o_VGA_BLANK_N,
+	output       o_VGA_SYNC_N,
+	output       o_VGA_CLK
 );
 
 localparam S_I2C       = 3'd0;
@@ -204,6 +214,31 @@ AudPlayer player0(
     .i_dac_data   (dac_data),    // <--- THIS IS YOUR OUTPUT AUDIO
     .o_aud_dacdat (o_AUD_DACDAT)
 );
+
+VGA_Display vga0 (
+	.i_clk_25mhz  (clk_25mhz_w),
+	.i_rst_n      (i_rst_n),
+	.i_audio_clk  (i_AUD_BCLK),
+	.i_sample_valid(sample_valid),
+	.i_audio_data (adc_data),
+	.o_VGA_R(o_VGA_R),
+	.o_VGA_G(o_VGA_G),
+	.o_VGA_B(o_VGA_B),
+	.o_VGA_HS(o_VGA_HS),
+	.o_VGA_VS(o_VGA_VS),
+	.o_VGA_BLANK_N(o_VGA_BLANK_N),
+	.o_VGA_SYNC_N(o_VGA_SYNC_N),
+	.o_VGA_CLK(o_VGA_CLK)
+);
+
+// 25 MHz clock generation from i_clk
+logic [1:0] clk_25mhz_r;
+logic clk_25mhz_w = (clk_25mhz_r > 2'd1) ? 1'b0 : 1'b1;
+
+always_ff @(posedge i_clk or negedge i_rst_n) begin
+	if (!i_rst_n) clk_25mhz_r <= 1'b0;
+	else          clk_25mhz_r <= ~clk_25mhz_r;
+end
 
 wire signed [15:0] w_gate_out;
 wire signed [15:0] w_trem_out;
