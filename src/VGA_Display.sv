@@ -1,4 +1,4 @@
-module VGA_Waveform (
+module VGA_Display (
     input  logic        i_clk_25mhz,    // VGA pixel clock
     input  logic        i_rst_n,
     input  logic        i_audio_clk,    // BCLK for audio samples

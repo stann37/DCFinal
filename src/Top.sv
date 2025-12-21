@@ -233,7 +233,7 @@ VGA_Display vga0 (
 
 // 25 MHz clock generation from i_clk
 logic [1:0] clk_25mhz_r;
-logic clk_25mhz_w = (clk_25mhz_r > 2'd1) ? 1'b0 : 1'b1;
+wire clk_25mhz_w = (clk_25mhz_r > 2'd1) ? 1'b0 : 1'b1;
 
 always_ff @(posedge i_clk or negedge i_rst_n) begin
 	if (!i_rst_n) clk_25mhz_r <= 1'b0;
