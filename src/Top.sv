@@ -35,13 +35,15 @@ module Top(
     output [6:0] o_hex0         // Parameter Value
 );
 
-localparam S_I2C        = 3'd0;
-localparam S_PLAY       = 3'd1;
-localparam S_SET        = 3'd2;
-localparam S_RECD_LOOP0  = 3'd3;
-localparam S_PLAY_LOOP0  = 3'd4;
-localparam S_RECD_LOOP1 = 3'd5;
-localparam S_PLAY_LOOP1 = 3'd6;
+localparam S_I2C         = 4'd0;
+localparam S_PLAY        = 4'd1;
+localparam S_SET         = 4'd2;
+localparam S_RECD_LOOP0  = 4'd3;
+localparam S_PLAY_LOOP0  = 4'd4;
+localparam S_RECD_LOOP1  = 4'd5;
+localparam S_PLAY_LOOP1  = 4'd6;
+localparam S_SET_LOOP0   = 4'd7;
+localparam S_SET_LOOP1   = 4'd8;
 
 // Effect mapping
 localparam EFF_GATE   = 3'd0;
@@ -58,7 +60,7 @@ localparam LOOP_UNENABLED = 2'd0;
 localparam LOOP_RECORD = 2'd1; 
 localparam LOOP_PLAY = 2'd2;
 
-logic [2:0] state_w, state_r;
+logic [3:0] state_w, state_r;
 logic [1:0] state_mem_w, state_mem_r; // determines which module is in control of SRAM
 
 localparam MEM_IDLE = 2'd0;
@@ -263,11 +265,18 @@ always_comb begin
 		S_PLAY_LOOP0: begin
 			loop0_state = LOOP_PLAY;
 		end
+		S_SET_LOOP0: begin
+			loop0_state = LOOP_PLAY
+		end
 		S_RECD_LOOP1: begin
 			loop0_state = LOOP_PLAY;
 			loop1_state = LOOP_RECORD;
 		end
 		S_PLAY_LOOP1: begin
+			loop0_state = LOOP_UNENABLED;
+			loop1_state = LOOP_PLAY;
+		end
+		S_SET_LOOP1: begin
 			loop0_state = LOOP_UNENABLED;
 			loop1_state = LOOP_PLAY;
 		end
@@ -395,27 +404,34 @@ always_comb begin
 			if (I2C_finish) state_w = S_PLAY;
 		end
 		S_PLAY: begin
-			if (i_key_2)      state_w = S_SET;
+			if (i_key_2) state_w = S_SET;
 			else if (i_key_1) state_w = S_RECD_LOOP0;
 		end
 		S_SET: begin
-			if (i_key_2)      state_w = S_PLAY;
+			if (i_key_2) state_w = S_PLAY;
 		end
 		S_RECD_LOOP0: begin
-			if (i_key_1)      state_w = S_PLAY_LOOP0;
+			if (i_key_1) state_w = S_PLAY_LOOP0;
 			else if (w_loop0_record_finish) state_w = S_PLAY_LOOP0;
 		end
 		S_PLAY_LOOP0: begin
-			if (i_key_2)      state_w = S_PLAY;
+			if (i_key_0) state_w = S_PLAY;
 			else if (i_key_1) state_w = S_RECD_LOOP1;
+			else if (i_key_2) state_w = S_SET_LOOP1;
+		end
+		S_SET_LOOP0: begin
+			if (i_key_2) state_w = S_PLAY_LOOP0;
 		end
 		S_RECD_LOOP1: begin
-			if (i_key_1)      state_w = S_PLAY_LOOP1;
+			if (i_key_1) state_w = S_PLAY_LOOP1;
 			else if (w_loop1_record_finish) state_w = S_PLAY_LOOP1;
 		end
 		S_PLAY_LOOP1: begin
-			if (i_key_2)      state_w = S_PLAY_LOOP0;
-			else if (i_key_1) state_w = S_RECD_LOOP1;
+			if (i_key_0) state_w = S_PLAY_LOOP0;
+			else if (i_key_2) state_w = S_SET_LOOP1;
+		end
+		S_SET_LOOP1: begin
+			if (i_key_2) state_w = S_PLAY_LOOP1;
 		end
 	endcase
 end
@@ -432,7 +448,7 @@ always_comb begin
 	state_loop_w = state_loop_r;
 	state_delay_w = state_delay_r;
 
-	if (state_r == S_SET) begin
+	if ((state_r == S_SET) || (state_r == S_SET_LOOP0) || (state_r == S_SET_LOOP1)) begin
 		if (i_key_0) begin 
 			case (effect_sel)
 				EFF_GATE: state_gate_w  = state_gate_r + 1;
@@ -455,6 +471,8 @@ always_comb begin
 		S_I2C:        o_ledg = 9'b1_0000_0000;
 		S_PLAY:       o_ledg = 9'b0_0000_0001;
 		S_SET:        o_ledg = 9'b0_0000_0010;
+		S_SET_LOOP0:  o_ledg = 9'b0_0000_0010;
+		S_SET_LOOP1:  o_ledg = 9'b0_0000_0010;
 		S_RECD_LOOP0: o_ledg = 9'b0_0000_0100;
 		S_PLAY_LOOP0: o_ledg = 9'b0_0000_1000;
 		S_RECD_LOOP1: o_ledg = 9'b0_0001_0000;
@@ -464,7 +482,7 @@ always_comb begin
 
 	// Red: Effects
 	o_ledr[17:8] = 10'b0; 
-	if (state_r == S_SET) begin
+	if ((state_r == S_SET) || (state_r == S_SET_LOOP0) || (state_r == S_SET_LOOP1)) begin
 		// In SET mode: Show a single cursor LED indicating which effect is selected
 		o_ledr[7:0] = (8'b1 << effect_sel);
 	end else begin
@@ -476,7 +494,7 @@ end
 // HEX0: Show current value of selected effect when in SET mode
 logic [2:0] current_val;
 always_comb begin
-	if (state_r == S_SET) begin
+	if ((state_r == S_SET) || (state_r == S_SET_LOOP0) || (state_r == S_SET_LOOP1)) begin
 		case (effect_sel)
 			EFF_GATE: current_val = state_gate_r;
 			EFF_COMP: current_val = state_comp_r;
