@@ -266,7 +266,7 @@ always_comb begin
 			loop0_state = LOOP_PLAY;
 		end
 		S_SET_LOOP0: begin
-			loop0_state = LOOP_PLAY
+			loop0_state = LOOP_PLAY;
 		end
 		S_RECD_LOOP1: begin
 			loop0_state = LOOP_PLAY;
