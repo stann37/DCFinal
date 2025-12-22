@@ -1,4 +1,4 @@
-module Effect_Loop (
+module Effect_Loop1 (
     input                      i_clk,
     input                      i_rst_n,
     input                      i_valid,
