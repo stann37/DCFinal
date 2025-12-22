@@ -53,7 +53,6 @@ module Effect_Delay (
         end
     end
 
-    // TODO: switch to variable delay after debugging
     assign read_ptr = (write_ptr >= delay_samples_var) ? (write_ptr - delay_samples_var) : (MAX_BUFFER + write_ptr - delay_samples_var);
 
     localparam [2:0] S_IDLE = 3'd0;
@@ -104,7 +103,6 @@ module Effect_Delay (
                 S_MIX: begin
                     if (i_enable) begin
                         o_data <= delayed_data;
-                        // TODO: error here
                     end else begin
                         o_data <= captured_input;
                     end

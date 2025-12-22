@@ -86,7 +86,7 @@ module Effect_Loop (
         case (i_state)
             RECORD: begin
                 if (i_valid) begin 
-                    period_w = (period_r < MAX_ADDR) ? period_r + 1 : MAX_ADDR;
+                    period_w = (waddr_r < MAX_ADDR) ? waddr_r + 1 : MAX_ADDR;
                     waddr_w = (waddr_r < MAX_ADDR) ? waddr_r + 1 : MAX_ADDR;
                 end
                 else begin
@@ -102,7 +102,7 @@ module Effect_Loop (
                 end
             end
             default: begin
-                period_w = START_ADDR;
+                period_w = period_r;
                 waddr_w = START_ADDR;
                 raddr_w = START_ADDR;
             end

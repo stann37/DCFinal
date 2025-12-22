@@ -268,7 +268,7 @@ always_comb begin
 			loop1_state = LOOP_RECORD;
 		end
 		S_PLAY_LOOP1: begin
-			loop0_state = LOOP_PLAY;
+			loop0_state = LOOP_UNENABLED;
 			loop1_state = LOOP_PLAY;
 		end
 	endcase
@@ -372,7 +372,7 @@ Effect_Loop0 loop0 (
 Effect_Loop1 loop1 (
 	.i_clk      (i_AUD_BCLK),
 	.i_rst_n    (i_rst_n),
-	.i_valid    (w_delay_valid),
+	.i_valid    (w_loop0_valid),
 	.i_level    (state_loop_r),
 	.i_data     (w_loop0_out),
 	.i_state    (loop1_state),
@@ -403,7 +403,7 @@ always_comb begin
 		end
 		S_RECD_LOOP0: begin
 			if (i_key_1)      state_w = S_PLAY_LOOP0;
-			else if (w_loop_record_finish) state_w = S_PLAY_LOOP0;
+			else if (w_loop0_record_finish) state_w = S_PLAY_LOOP0;
 		end
 		S_PLAY_LOOP0: begin
 			if (i_key_2)      state_w = S_PLAY;
@@ -411,7 +411,7 @@ always_comb begin
 		end
 		S_RECD_LOOP1: begin
 			if (i_key_1)      state_w = S_PLAY_LOOP1;
-			else if (w_loop_record_finish) state_w = S_PLAY_LOOP1;
+			else if (w_loop1_record_finish) state_w = S_PLAY_LOOP1;
 		end
 		S_PLAY_LOOP1: begin
 			if (i_key_2)      state_w = S_PLAY_LOOP0;
@@ -509,7 +509,7 @@ always_ff @(posedge i_AUD_BCLK or negedge i_rst_n) begin
 		state_EQb_r  <= 3'd4;
 		state_EQt_r  <= 3'd4;
 		state_trem_r <= 0;
-		state_loop_r <= 0;
+		state_loop_r <= 3'd3;
 		state_delay_r <= 0;
 	end
 	else begin
