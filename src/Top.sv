@@ -417,7 +417,7 @@ always_comb begin
 		S_PLAY_LOOP0: begin
 			if (i_key_0) state_w = S_PLAY;
 			else if (i_key_1) state_w = S_RECD_LOOP1;
-			else if (i_key_2) state_w = S_SET_LOOP1;
+			else if (i_key_2) state_w = S_SET_LOOP0;
 		end
 		S_SET_LOOP0: begin
 			if (i_key_2) state_w = S_PLAY_LOOP0;
