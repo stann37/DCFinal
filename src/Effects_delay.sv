@@ -65,11 +65,11 @@ module Effect_Delay (
 
     logic signed [15:0] captured_input; // Store input stable
     logic signed [15:0] delayed_sample; // Store SRAM data
-    logic signed [16:0] scaled_input, scaled_sample;
+    logic signed [17:0] scaled_input, scaled_sample;
     logic signed [15:0] delayed_data;
-    assign scaled_input = captured_input;
+    assign scaled_input = captured_input * 3;
     assign scaled_sample = delayed_sample;
-    assign delayed_data = (scaled_input + scaled_sample) >>> 1;
+    assign delayed_data = (scaled_input + scaled_sample) >>> 2;
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
