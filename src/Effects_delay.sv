@@ -65,11 +65,12 @@ module Effect_Delay (
 
     logic signed [15:0] captured_input; // Store input stable
     logic signed [15:0] delayed_sample; // Store SRAM data
-    logic signed [16:0] scaled_input, scaled_sample;
+    logic signed [17:0] scaled_input, scaled_sample;
     logic signed [15:0] delayed_data;
-    assign scaled_input = captured_input;
-    assign scaled_sample = delayed_sample;
-    assign delayed_data = (scaled_input + scaled_sample) >>> 1;
+    logic signed [15:0] stored_data;
+    assign scaled_input = {1'b0,captured_input, 1'b0} + {2'b0,captured_input};
+    assign scaled_sample = {2'b0,delayed_sample};
+    assign delayed_data = (scaled_input + scaled_sample) >>> 2;
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
@@ -78,13 +79,14 @@ module Effect_Delay (
             o_data <= 0;
             captured_input <= 0;
             delayed_sample <= 0;
+            stored_data <= 0;
         end
         else begin
             o_valid <= 0; // default
             case (state)
                 S_IDLE: begin
                     if (i_valid) begin
-                        captured_input <= i_data; // Latch input audio
+                        captured_input <= stored_data; // Latch input audio
                         state <= S_WRITE;
                     end
                 end
@@ -106,6 +108,7 @@ module Effect_Delay (
                     end else begin
                         o_data <= captured_input;
                     end
+                    stored_data <= captured_input;
                     o_valid <= 1;
                     state <= S_IDLE;
                 end
